@@ -1,4 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { fetchUserData } from '../../api';
+import { useLocation } from 'react-router-dom';
+
+
 import { ProSidebar, Menu, MenuItem } from "react-pro-sidebar";
 import { Box, IconButton, Typography, useTheme } from "@mui/material";
 import { Link } from "react-router-dom";
@@ -40,6 +44,27 @@ const Sidebar = () => {
   const colors = tokens(theme.palette.mode);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [selected, setSelected] = useState("Dashboard");
+
+  const location = useLocation();
+  const { firstName = "Guest", role = "Patient" } = location.state || {}; // Destructure state
+
+  /*
+  const [user, setUser] = useState({ username: 'Loading...', fullname: 'Loading...' });
+  
+  useEffect(() => {
+    // This gets the user info from fetchUserData function in api.js
+    const getUserData = async () => {
+      try {
+        const data = await fetchUserData();
+        setUser(data);
+      } catch (error) {
+        setUser({ username: 'Error', fullname: 'Could not load' });
+      }
+    };
+
+    getUserData(); // Waypoint to start fetchUserData
+  }, []);
+  */
 
   return (
     <Box
@@ -107,10 +132,12 @@ const Sidebar = () => {
                   fontWeight="bold"
                   sx={{ m: "10px 0 0 0" }}
                 >
-                  Zhe
+                  {/*-- User's fullname is extracted from the server. Uses getUserData function*/}
+                  {firstName}
                 </Typography>
                 <Typography variant="h5" coloFr={colors.greenAccent[500]}>
-                  Admin Mode
+                  {/*-- User's role is extracted from the server. Uses getUserData function*/}
+                  {role}
                 </Typography>
               </Box>
             </Box>

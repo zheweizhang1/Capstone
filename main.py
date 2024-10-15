@@ -1,8 +1,11 @@
 from flask import Flask, redirect, url_for, render_template, request, jsonify, session
 from flask_pymongo import PyMongo
 from bson import ObjectId
+from flask_cors import CORS
+
 
 app = Flask(__name__)
+CORS(app)
 app.config["MONGO_URI"] = "mongodb://localhost:27017/my_app"
 app.secret_key = 'secret_key'
 db = PyMongo(app).db
@@ -68,6 +71,53 @@ def dashboard():
 
 
 
+@app.route('/api/user')
+def get_user():
+    user_id = 'timetravelingjohn'
+    #user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"error": "User not logged in"}), 401  # Unauthorized if no user is found
+    
+    user = db.users.find_one({'username': user_id})
+    
+    if user is None:
+        return jsonify({"error": "User not found"}), 404  # Handle case where user is not found
+    
+    return jsonify({
+        "fullname": user['fullname'],
+        "role": user['role']
+    })  # Return user data as JSON
+
+
+
+@app.route('/api/user', methods=['POST'])
+def create_user():
+    data = request.json  # Get the JSON data from the request
+    print("Received data:", data)
+    try:
+        # Insert the user data into the 'users' collection
+        result = db.users.insert_one({
+            "firstName": data['firstName'],
+            "lastName": data['lastName'],
+            "email": data['email'],
+            "contact": data['contact'],
+            "address1": data['address1'],
+            "address2": data['address2'],
+            "role": 'Patient'
+        }) 
+        print(result)
+        # Return the created user data with the new user ID
+        new_user = db.users.find_one({"_id": result.inserted_id})
+        print(new_user)
+        return jsonify({
+            "firstName": new_user['firstName'],
+            "role": new_user['role']
+
+        }), 201  # Created status
+
+    except Exception as e:
+        print('failed:', str(e))  # Print the actual exception message
+        return jsonify({"error": str(e)}), 500  # Internal server error
 
 '''
 @app.route('/login', methods = ['POST'])
