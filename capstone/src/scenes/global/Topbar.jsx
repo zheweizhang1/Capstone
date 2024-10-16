@@ -1,5 +1,6 @@
-import { Box, IconButton, useTheme } from "@mui/material";
-import { useContext } from "react";
+import { Box, IconButton, useTheme, Menu, MenuItem } from "@mui/material";
+import { useState, useContext } from "react";
+import { useNavigate } from "react-router-dom"; // For navigation
 import { ColorModeContext, tokens } from "../../theme";
 import InputBase from "@mui/material/InputBase";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
@@ -13,6 +14,26 @@ const Topbar = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const colorMode = useContext(ColorModeContext);
+  const navigate = useNavigate(); // For navigation
+
+  // State for managing the dropdown
+  const [anchorEl, setAnchorEl] = useState(null);
+
+  // Open the dropdown menu
+  const handleMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  // Close the dropdown menu
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  // Handle logout
+  const handleLogout = () => {
+    handleMenuClose(); // Close the menu before redirecting
+    navigate("/"); // Redirect to home
+  };
 
   return (
     <Box display="flex" justifyContent="space-between" p={2}>
@@ -43,9 +64,17 @@ const Topbar = () => {
         <IconButton>
           <SettingsOutlinedIcon />
         </IconButton>
-        <IconButton>
+        <IconButton onClick={handleMenuOpen}>
           <PersonOutlinedIcon />
         </IconButton>
+        {/* Dropdown menu for the profile icon */}
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handleMenuClose}
+        >
+          <MenuItem onClick={handleLogout}>Logout</MenuItem>
+        </Menu>
       </Box>
     </Box>
   );
