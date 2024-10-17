@@ -22,6 +22,7 @@ const Form = () => {
 
   const handleFormSubmit = async (values) => {
     try {
+      // const response = await axios.post("localhost:5000/api/user", values);
       const response = await createUser(values); // Use the createUser function from api.js
       console.log('User created:', response);
       navigate('/', { state: { firstName: response.firstName, role: response.role } });
