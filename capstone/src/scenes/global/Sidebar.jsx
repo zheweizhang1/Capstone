@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchUserData } from '../../api';
 import { useLocation } from 'react-router-dom';
-
 
 import { ProSidebar, Menu, MenuItem } from "react-pro-sidebar";
 import { Box, IconButton, Typography, useTheme } from "@mui/material";
@@ -46,9 +44,10 @@ const Sidebar = () => {
   const [selected, setSelected] = useState("Dashboard");
 
   const location = useLocation();
-  const { firstName = "Guest", role = "Patient" } = location.state || {}; // Destructure state
+  const { firstname = "Guest", username = "Username" } = location.state || {}; // Destructure state
 
-  /*
+  /* For future reference. Now this code extacts the username and fullname from the database
+     Could be used to extract other data to fill out the dashboard
   const [user, setUser] = useState({ username: 'Loading...', fullname: 'Loading...' });
   
   useEffect(() => {
@@ -105,7 +104,7 @@ const Sidebar = () => {
                 ml="15px"
               >
                 <Typography variant="h3" color={colors.grey[100]}>
-                Clinical State
+                  Clinical State
                 </Typography>
                 <IconButton onClick={() => setIsCollapsed(!isCollapsed)}>
                   <MenuOutlinedIcon />
@@ -133,11 +132,11 @@ const Sidebar = () => {
                   sx={{ m: "10px 0 0 0" }}
                 >
                   {/*-- User's fullname is extracted from the server. Uses getUserData function*/}
-                  {firstName}
+                  {firstname}
                 </Typography>
                 <Typography variant="h5" coloFr={colors.greenAccent[500]}>
                   {/*-- User's role is extracted from the server. Uses getUserData function*/}
-                  {role}
+                  {username}
                 </Typography>
               </Box>
             </Box>
@@ -146,7 +145,7 @@ const Sidebar = () => {
           <Box paddingLeft={isCollapsed ? undefined : "10%"}>
             <Item
               title="Dashboard"
-              to="/"
+              to="/dashboard"
               icon={<HomeOutlinedIcon />}
               selected={selected}
               setSelected={setSelected}

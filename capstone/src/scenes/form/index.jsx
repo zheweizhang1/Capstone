@@ -1,6 +1,3 @@
-import { createUser } from '../../api';
-import { useNavigate } from 'react-router-dom';
-
 import { Box, Button, TextField } from "@mui/material";
 import { Formik } from "formik";
 import * as yup from "yup";
@@ -9,26 +6,9 @@ import Header from "../../components/Header";
 
 const Form = () => {
   const isNonMobile = useMediaQuery("(min-width:600px)");
-  const navigate = useNavigate();
 
-  const initialValues = {
-    firstName: '',
-    lastName: '',
-    email: '',
-    contact: '',
-    address1: '',
-    address2: '',
-  };
-
-  const handleFormSubmit = async (values) => {
-    try {
-      // const response = await axios.post("localhost:5000/api/user", values);
-      const response = await createUser(values); // Use the createUser function from api.js
-      console.log('User created:', response);
-      navigate('/', { state: { firstName: response.firstName, role: response.role } });
-    } catch (error) {
-      console.error("Error creating user here:", error);
-    }
+  const handleFormSubmit = (values) => {
+    console.log(values);
   };
 
   return (

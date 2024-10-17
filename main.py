@@ -71,47 +71,48 @@ def dashboard():
 
 
 
-@app.route('/api/user')
+@app.route('/api/login', methods=['POST'])
 def get_user():
-    user_id = 'timetravelingjohn'
-    #user_id = session.get('user_id')
-    if not user_id:
-        return jsonify({"error": "User not logged in"}), 401  # Unauthorized if no user is found
-    
-    user = db.users.find_one({'username': user_id})
-    
-    if user is None:
-        return jsonify({"error": "User not found"}), 404  # Handle case where user is not found
-    
-    return jsonify({
-        "fullname": user['fullname'],
-        "role": user['role']
-    })  # Return user data as JSON
+    data = request.json
+    print("Received login data:", data)
+    try:
+        # Search for the user in the 'users' collection
+        user = db.users.find_one({"username": data['username'], "password": data['password']})
+        if user:
+            return jsonify({
+                "firstname": user['firstname'],
+                "username": user['username']
+            }), 200  # OK status
+        else:
+            return jsonify({"error": "Invalid username or password"}), 401  # Unauthorized
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500  # Internal server error
 
 
 
-@app.route('/api/user', methods=['POST'])
+@app.route('/api/signup', methods=['POST'])
 def create_user():
-    data = request.json  # Get the JSON data from the request
-    print("Received data:", data)
+    data = request.json
+    print("Received signup data:", data)
     try:
         # Insert the user data into the 'users' collection
         result = db.users.insert_one({
-            "firstName": data['firstName'],
-            "lastName": data['lastName'],
+            "username": data['username'],
+            "password": data['password'],
+            "firstname": data['firstname'],
+            "lastname": data['lastname'],
             "email": data['email'],
-            "contact": data['contact'],
+            "phonenumber": data['phonenumber'],
             "address1": data['address1'],
             "address2": data['address2'],
-            "role": 'Patient'
         }) 
         print(result)
         # Return the created user data with the new user ID
         new_user = db.users.find_one({"_id": result.inserted_id})
         print(new_user)
         return jsonify({
-            "firstName": new_user['firstName'],
-            "role": new_user['role']
+            "firstname": new_user['firstname'],
+            "username": new_user['username']
 
         }), 201  # Created status
 
