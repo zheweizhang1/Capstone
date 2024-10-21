@@ -28,18 +28,14 @@ const LoginPage = () => {
     };
     console.log("Logging in with:", values.username, values.password);
     
-
     try {
       // const response = await axios.post("localhost:5000/api/user", values);
-      const response = await logInAPI(values); // Use the createUser function from api.js
+      const response = await logInAPI(values); // Uses the logInAPI function from api.js
       console.log('User logged in:', response);
       navigate('/dashboard', { state: { firstname: response.firstname, username: response.username } });
     } catch (error) {
       console.error("Error logging in at Logsin.jsx:", error);
     }
-
-    // Simulate successful sign-in and redirect to dashboard
-    // navigate("/dashboard"); // Redirect to dashboard after sign-in
   };
 
   // Simulate sign-up function (just for redirection for now)

@@ -22,6 +22,7 @@ def login():
     username = data.get('username')
     password = data.get('password')
     print(f'Received username is {username}\nReceived password is {password}')
+    
     # Query
     user = db.users.find_one({'username': username, 'password': password})
     
@@ -76,7 +77,6 @@ def get_user():
     data = request.json
     print("Received login data:", data)
     try:
-        # Search for the user in the 'users' collection
         user = db.users.find_one({"username": data['username'], "password": data['password']})
         if user:
             return jsonify({
@@ -87,7 +87,6 @@ def get_user():
             return jsonify({"error": "Invalid username or password"}), 401  # Unauthorized
     except Exception as e:
         return jsonify({"error": str(e)}), 500  # Internal server error
-
 
 
 @app.route('/api/signup', methods=['POST'])
