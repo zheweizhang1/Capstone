@@ -92,7 +92,7 @@ def get_user_logs():
     
     try:
         # Fetch events for the logged-in user
-        events = list(db.logs.find({"username": username}))  # Convert cursor to list
+        events = db.logs.find({"username": "Sagiri"}) # Convert cursor to list
         #events = db.logs.find({"username": username})  # Adjust the collection name as needed
         if not events:
             return jsonify([]), 200

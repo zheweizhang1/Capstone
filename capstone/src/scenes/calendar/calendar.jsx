@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import FullCalendar, { formatDate } from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -17,7 +17,6 @@ import { tokens } from "../../theme";
 
 import { getEventsAPI } from "../../api"; // Make sure to import your API function
 import { useUser } from '../../UserContext';
-import { useEffect } from "react";
 
 const Calendar = () => {
   const theme = useTheme();
@@ -66,10 +65,10 @@ const Calendar = () => {
       } catch (error) {
         console.error("Error fetching events:", error);
       }
-  };
+    };
 
     fetchEvents();
-  }, []);
+  }, [user.username]);
 
   return (
     <Box m="20px">
@@ -133,8 +132,7 @@ const Calendar = () => {
             dayMaxEvents={true}
             select={handleDateClick}
             eventClick={handleEventClick}
-            eventsSet={(events) => setCurrentEvents(events)}
-            initialEvents={currentEvents}
+            events={currentEvents} // Use events prop here
           />
         </Box>
       </Box>
