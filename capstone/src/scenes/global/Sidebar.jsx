@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from 'react-router-dom';
+import { useUser } from '../../UserContext';
 
 import { ProSidebar, Menu, MenuItem } from "react-pro-sidebar";
 import { Box, IconButton, Typography, useTheme } from "@mui/material";
@@ -43,9 +44,11 @@ const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [selected, setSelected] = useState("Dashboard");
 
+  const { user } = useUser();  // Access user data and logout function
+  /*
   const location = useLocation();
   const { firstname = "Guest", username = "Username" } = location.state || {}; // Destructure state
-
+  */
   /* For future reference. Now this code extacts the username and fullname from the database
      Could be used to extract other data to fill out the dashboard
   const [user, setUser] = useState({ username: 'Loading...', fullname: 'Loading...' });
@@ -132,11 +135,11 @@ const Sidebar = () => {
                   sx={{ m: "10px 0 0 0" }}
                 >
                   {/*-- User's fullname is extracted from the server. Uses getUserData function*/}
-                  {firstname}
+                  {user.firstname}
                 </Typography>
                 <Typography variant="h5" coloFr={colors.greenAccent[500]}>
                   {/*-- User's role is extracted from the server. Uses getUserData function*/}
-                  {username}
+                  {user.username}
                 </Typography>
               </Box>
             </Box>

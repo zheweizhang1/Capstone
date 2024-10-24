@@ -15,6 +15,10 @@ import {
 import Header from "../../components/Header";
 import { tokens } from "../../theme";
 
+import { getEventsAPI } from "../../api"; // Make sure to import your API function
+import { useUser } from '../../UserContext';
+import { useEffect } from "react";
+
 const Calendar = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -45,6 +49,21 @@ const Calendar = () => {
       selected.event.remove();
     }
   };
+
+  // Server
+  const [ user ] = useUser();
+  useEffect(() => {
+    const fetchEvents = async () => {
+      console.log("Trying to get user's {" + user.username + "} events");
+      try {
+        const response = await getEventsAPI(user.username);
+      } catch (error) {
+        console.error("Error fetching events:", error);
+      }
+    };
+
+    fetchEvents();
+  }, []);
 
   return (
     <Box m="20px">
@@ -113,12 +132,14 @@ const Calendar = () => {
               {
                 id: "12315",
                 title: "All-day event",
-                date: "2022-09-14",
+                date: "2024-10-24",
+                score: "100"
               },
               {
                 id: "5123",
                 title: "Timed event",
-                date: "2022-09-28",
+                date: "2024-10-25",
+                score: "0"
               },
             ]}
           />

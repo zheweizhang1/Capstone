@@ -4,6 +4,10 @@ import { tokens } from "../../theme";
 import { mockDataInvoices } from "../../data/mockData";
 import Header from "../../components/Header";
 
+import { getLastnameAPI } from '../../api';
+import { useUser } from '../../UserContext';
+import { useEffect } from "react";
+
 const Invoices = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -41,6 +45,23 @@ const Invoices = () => {
       flex: 1,
     },
   ];
+
+  const { user } = useUser(); // Access loginUser from UserContext
+  useEffect(() => {
+    const console_log_lastname = async (e) => {
+      console.log("Trying to get user's {" + user.username + "} last name");
+      try {
+      const response = await getLastnameAPI(user.username)
+      console.log("Logged user's last name is", response.lastname)
+      } catch (error) {
+        console.error("Error at contole_log_lastname:", error);
+      }
+    }
+    console_log_lastname();
+  }, []);
+  
+
+  
 
   return (
     <Box m="20px">

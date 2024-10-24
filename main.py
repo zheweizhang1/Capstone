@@ -3,73 +3,18 @@ from flask_pymongo import PyMongo
 from bson import ObjectId
 from flask_cors import CORS
 
-
 app = Flask(__name__)
-CORS(app)
 app.config["MONGO_URI"] = "mongodb://localhost:27017/my_app"
-app.secret_key = 'secret_key'
 db = PyMongo(app).db
+
+app.config['SESSION_COOKIE_HTTPONLY'] = False
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+app.secret_key = 'BAD_SEKRET_KEY'
+CORS(app, supports_credentials=True)
 
 @app.route('/')
 def sign_up():
     return render_template('index.html')
-
-
-@app.route('/login', methods=['POST'])
-def login():
-    data = request.get_json()
-    
-    username = data.get('username')
-    password = data.get('password')
-    print(f'Received username is {username}\nReceived password is {password}')
-    
-    # Query
-    user = db.users.find_one({'username': username, 'password': password})
-    
-    if user is None:
-        print('User not found')
-        return jsonify({"message": "User not found"}), 404
-    
-    session['user_id'] = str(user['_id'])
-    print(f"User's object id is {session.get('user_id')}")
-    return jsonify({"message": "Login successful", "is_enter_dashboard": True}), 200
-
-
-@app.route('/signup', methods=['POST'])
-def signup():
-    data = request.get_json()
-    
-    fullname = data.get('fullname')
-    username = data.get('username')
-    password = data.get('password')
-    print(f'Received fullname is {fullname}\nReceived username is {username}\nReceived password is {password}')
-    # Insert
-    
-    try:
-        user = db.users.insert_one({ 'fullname': fullname, 'username': username, 'password': password })
-    except:
-        print('User not inserted')
-        return jsonify({"message": "User not inserted"}), 404
-    
-    session['user_id'] = str(user.inserted_id)
-    print(f"User's object id is {session.get('user_id')}")
-    return jsonify({"message": "Sign Up successful", "is_enter_dashboard": True}), 200
-
-
-@app.route('/dashboard')
-def dashboard():
-    user_id = session.get('user_id')
-    print('Entering the dashboard')
-    if not user_id:
-        return redirect(url_for('login'))
-    
-    user = db.users.find_one({'_id': ObjectId(user_id)})  # Ensure ObjectId is used
-
-    if user is None:
-        return "User not found", 404  # Handle case where user is not found
-    
-    return render_template('dashboard.html', fullname = user['fullname'], username = user['username'])
-
 
 
 @app.route('/api/login', methods=['POST'])
@@ -79,6 +24,8 @@ def get_user():
     try:
         user = db.users.find_one({"username": data['username'], "password": data['password']})
         if user:
+            session['username'] = user['username']
+            print(f"Session's username is {session['username']}")
             return jsonify({
                 "firstname": user['firstname'],
                 "username": user['username']
@@ -107,7 +54,7 @@ def create_user():
         }) 
         print(result)
         # Return the created user data with the new user ID
-        new_user = db.users.find_one({"_id": result.inserted_id})
+        new_user = db.users.find_one({'_id': result.inserted_id})
         print(new_user)
         return jsonify({
             "firstname": new_user['firstname'],
@@ -119,61 +66,46 @@ def create_user():
         print('failed:', str(e))  # Print the actual exception message
         return jsonify({"error": str(e)}), 500  # Internal server error
 
-'''
-@app.route('/login', methods = ['POST'])
-def login():
-    if request.method == "POST":
-        data = request.get_json()
 
-        username = data.get('username')
-        password = data.get('password')
+@app.route('/api/lastname', methods=['GET']) 
+def get_user_lastname():
+    username = request.args.get('username')
+    print("Received username for lastname extraction: ", username)
+    if not username:
+        return jsonify({"error": "Unauthorized"}), 401
+    try:
+        user = db.users.find_one({"username": username})  # Find the user by username
+        if user:
+            return jsonify({
+                "lastname": user['lastname'],
+            }), 200  # OK status
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500  # Internal server error
+    
+    
+@app.route('/api/events', methods=['GET'])
+def get_user_logs():
+    username = request.args.get('username')
+    print("Received username for vents extraction: ", username)
+    if not username:
+        return jsonify({"error": "Unauthorized"}), 401
 
-        #username = request.form['username']
-        #password = request.form['password']
+    try:
+        # Fetch events for the logged-in user
+        events = db.logs.find({"username": username})  # Adjust the collection name as needed
+        formatted_events = [
+            {
+                "id": str(event["_id"]),
+                "title": f"Score: {event['score']}",
+                "date": event['date'].isoformat(),  # Ensure this is in a valid date format
+                "score": event["score"]
+            }
+            for event in events
+        ]
+        return jsonify(formatted_events), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500  # Internal server error
 
-        user = db.users.find_one({'username': username, 'password': password})
-        if not user:
-            return jsonify({"error": "User not found"}), 404
-        
-        user_id = str(user.inserted_id)
-        return redirect(url_for('enter', entered = 'True', object_id = user_id))
-
-
-@app.route('/enter')
-def enter():
-    entered = request.args.get('entered', 'False')
-    print(f'Success {entered}')
-
-'''
-
-#---
-
-'''
-@app.route('/submit', methods = ['POST', 'GET'])
-def submit():
-    if request.method == 'POST':
-        name = request.form['name']
-        username = request.form['username']
-        password = request.form['password']
-    user = db.users.insert_one({ 'name': name, 'username': username, 'password': password })
-    user_id = str(user.inserted_id)
-    ###
-
-    return redirect(url_for('enter', entered = 'True', oid = user_id))
-
-@app.route('/enter')
-def enter():
-    entered = request.args.get('entered', 'False')
-    oid = request.args.get('oid', '')
-    if oid:
-        user = db.users.find_one({'_id': ObjectId(oid)})
-
-    if entered.lower() == 'true':
-        res = 'welcome'
-    else:
-        res = 'not welcome.'
-    return render_template('enter.html', result = res, objectid = oid, username = user['username'], password = user['password'])
-'''
 
 
 

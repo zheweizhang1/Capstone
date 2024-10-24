@@ -1,7 +1,8 @@
-import { logInAPI, signUpAPI } from '../api';
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+
+import { logInAPI, signUpAPI } from '../api';
+import { useUser } from '../UserContext';
 
 const LoginPage = () => {
   const [isRightPanelActive, setRightPanelActive] = useState(false);
@@ -17,6 +18,7 @@ const LoginPage = () => {
     setRightPanelActive(false);
   };
 
+  const { loginUser } = useUser(); // Access loginUser from UserContext
   // Simulate sign-in function
   const handleSignIn = async (e) => {
     e.preventDefault();
@@ -32,6 +34,7 @@ const LoginPage = () => {
       // const response = await axios.post("localhost:5000/api/user", values);
       const response = await logInAPI(values); // Uses the logInAPI function from api.js
       console.log('User logged in:', response);
+      loginUser({ username: response.username, firstname: response.firstname });
       navigate('/dashboard', { state: { firstname: response.firstname, username: response.username } });
     } catch (error) {
       console.error("Error logging in at Logsin.jsx:", error);
@@ -59,6 +62,7 @@ const LoginPage = () => {
       // const response = await axios.post("localhost:5000/api/user", values);
       const response = await signUpAPI(values); // Use the createUser function from api.js
       console.log('User signed up:', response);
+      loginUser({ username: response.username, firstname: response.firstname });
       navigate('/dashboard', { state: { firstname: response.firstname, username: response.username } });
     } catch (error) {
       console.error("Error signning up at Logsin.jsx:", error);
