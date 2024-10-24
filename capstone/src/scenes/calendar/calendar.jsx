@@ -51,16 +51,22 @@ const Calendar = () => {
   };
 
   // Server
-  const [ user ] = useUser();
+  const { user } = useUser();
   useEffect(() => {
     const fetchEvents = async () => {
       console.log("Trying to get user's {" + user.username + "} events");
       try {
         const response = await getEventsAPI(user.username);
+        if (!Array.isArray(response)) {
+          console.error("Expected an array, but got:", response);
+          return; // Early return to prevent further errors
+        }
+        console.log("Fetched events:", response);
+        setCurrentEvents(response); // Update state with fetched events
       } catch (error) {
         console.error("Error fetching events:", error);
       }
-    };
+  };
 
     fetchEvents();
   }, []);
@@ -128,20 +134,7 @@ const Calendar = () => {
             select={handleDateClick}
             eventClick={handleEventClick}
             eventsSet={(events) => setCurrentEvents(events)}
-            initialEvents={[
-              {
-                id: "12315",
-                title: "All-day event",
-                date: "2024-10-24",
-                score: "100"
-              },
-              {
-                id: "5123",
-                title: "Timed event",
-                date: "2024-10-25",
-                score: "0"
-              },
-            ]}
+            initialEvents={currentEvents}
           />
         </Box>
       </Box>

@@ -89,20 +89,25 @@ def get_user_logs():
     print("Received username for vents extraction: ", username)
     if not username:
         return jsonify({"error": "Unauthorized"}), 401
-
+    
     try:
         # Fetch events for the logged-in user
-        events = db.logs.find({"username": username})  # Adjust the collection name as needed
+        events = list(db.logs.find({"username": username}))  # Convert cursor to list
+        #events = db.logs.find({"username": username})  # Adjust the collection name as needed
+        if not events:
+            return jsonify([]), 200
+        
         formatted_events = [
-            {
-                "id": str(event["_id"]),
-                "title": f"Score: {event['score']}",
-                "date": event['date'].isoformat(),  # Ensure this is in a valid date format
-                "score": event["score"]
-            }
-            for event in events
-        ]
+                {
+                    "id": str(event["_id"]),
+                    "title": f"Score: {event['score']}",
+                    "date": event['date'],
+                    "score": event["score"]
+                }
+                for event in events
+            ]
         return jsonify(formatted_events), 200
+        
     except Exception as e:
         return jsonify({"error": str(e)}), 500  # Internal server error
 
