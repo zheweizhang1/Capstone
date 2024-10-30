@@ -6,7 +6,7 @@ import MicIcon from '@mui/icons-material/Mic';
 import StopIcon from '@mui/icons-material/Stop';
 import PlayArrowOutlinedIcon from '@mui/icons-material/PlayArrowOutlined';
 
-const Invoices = () => {
+const Recording = () => {
   const theme = useTheme();
   const [inputValue, setInputValue] = useState("");
   const [isRecording, setIsRecording] = useState(false);
@@ -93,4 +93,4 @@ const Invoices = () => {
   );
 };
 
-export default Invoices;
+export default Recording;
