@@ -58,10 +58,10 @@ const Calendar = () => {
         const response = await getEventsAPI(user.username);
         if (!Array.isArray(response)) {
           console.error("Expected an array, but got:", response);
-          return; // Early return to prevent further errors
+          return;
         }
         console.log("Fetched events:", response);
-        setCurrentEvents(response); // Update state with fetched events
+        setCurrentEvents(response);
       } catch (error) {
         console.error("Error fetching events:", error);
       }
@@ -132,7 +132,7 @@ const Calendar = () => {
             dayMaxEvents={true}
             select={handleDateClick}
             eventClick={handleEventClick}
-            events={currentEvents} // Use events prop here
+            events={currentEvents}
           />
         </Box>
       </Box>

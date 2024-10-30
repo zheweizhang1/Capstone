@@ -6,11 +6,11 @@ export const UserProvider = ({ children }) => {
   const [user, setUser] = useState("Guest");
 
   const loginUser = (userData) => {
-    setUser(userData);  // Updates the user data with logged-in user's details
+    setUser(userData);
   };
 
   const logoutUser = () => {
-    setUser(null);  // Clears user data upon logout
+    setUser(null);
   };
 
   return (
@@ -21,5 +21,5 @@ export const UserProvider = ({ children }) => {
 };
 
 export const useUser = () => {
-    return useContext(UserContext); // Custom hook to use user context
+    return useContext(UserContext);
   };
