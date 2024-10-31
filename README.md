@@ -16,11 +16,16 @@ Optionally,
 
 Then,
 
+## npm install react-scripts@latest
+
 ## npm start
 
+## npm outdated
 
 
 
 Server runs on port 5000 and website is on 3000. For them to be able to connect, run
 
 ## npm install axios
+
+
