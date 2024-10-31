@@ -1,6 +1,7 @@
 .spyproject
 /myLocalFiles
 /Capstone Project Directory.code-workspace
-/recordings
+
 /node_modules
 package-lock.json
+/templates
