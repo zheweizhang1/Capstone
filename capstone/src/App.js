@@ -4,7 +4,7 @@ import Topbar from "./scenes/global/Topbar";
 import Sidebar from "./scenes/global/Sidebar";
 import Dashboard from "./scenes/dashboard";
 import Team from "./scenes/team";
-import Invoices from "./scenes/invoices";
+import Recording from "./scenes/invoices";
 import Contacts from "./scenes/contacts";
 import Bar from "./scenes/bar";
 import Form from "./scenes/form";
@@ -41,11 +41,11 @@ function App() {
                 {/* Login page route */}
                 <Route path="/" element={<Login />} />
 
-                {/* Protected routes (accessible after login) */}
+              {/* Protected routes (accessible after login) */}
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/team" element={<Team />} />
                 <Route path="/contacts" element={<Contacts />} />
-                <Route path="/invoices" element={<Invoices />} />
+                <Route path="/recording" element={<Recording />} />
                 <Route path="/form" element={<Form />} />
                 <Route path="/bar" element={<Bar />} />
                 <Route path="/pie" element={<Pie />} />

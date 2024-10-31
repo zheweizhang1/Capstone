@@ -57,3 +57,35 @@ export const getEventsAPI = async (username) => {
     throw error;
   }
 };
+
+export const uploadAudioAPI = async (formData) => {
+  try {
+    const response = await axios.post(`${API_URL}upload_audio`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      },
+      withCredentials: true
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error at uploadAudioAPI", error);
+    throw error;
+  }
+};
+
+export const sendMessageAPI = async (formData) => {
+  try {
+    const response = await axios.post(`${API_URL}handle_message`, formData, {
+      /*
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      },
+      withCredentials: true
+      */
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error at uploadAudioAPI", error);
+    throw error;
+  }
+};
