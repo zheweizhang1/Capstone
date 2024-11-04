@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login & Sign Up</title>
+</head>
+
+<body>
+    <div style="display: flex; justify-content: center; margin-top: 50px;">
+        <div style="margin-right: 80px;">
+            <h2>Login</h2>
+            <form id="login-form">
+                <label for="username">Username:</label><br>
+                <input type="text" id="username" name="username" required><br><br>
+
+                <label for="password">Password:</label><br>
+                <input type="password" id="password" name="password" required><br><br>
+
+                <button type="submit">Login</button>
+            </form>
+        </div>
+
+        <div>
+            <form id="signup-form">
+                <h2>Sign Up</h2>
+                <label for="fullname">Full Name:</label><br>
+                <input type="text" id="signup-fullname" name="fullname" required><br><br>
+
+                <label for="username">Username:</label><br>
+                <input type="text" id="signup-username" name="username" required><br><br>
+
+                <label for="password">Password:</label><br>
+                <input type="password" id="signup-password" name="password" required><br><br>
+
+                <button type="submit">Sign Up</button>
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+        document.getElementById('login-form').addEventListener('submit', function (event) {
+            event.preventDefault()
+
+            // Get the username and password input values
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            console.log("Username entered: ", username);
+            console.log("Password entered: ", password);
+
+            // Prepare the data to send as JSON
+            const formData = {
+                username: username,
+                password: password
+            };
+
+            // Send a POST request to the server with the login data
+            fetch('/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            })
+                .then(response => {
+                    return response.json().then(data => {
+                        // Check if login was successful
+                        if (response.ok && data.is_enter_dashboard) {  // Use response.ok to check status
+                            window.location.href = '/dashboard';  // Redirect to dashboard
+                        } else {
+                            alert(data.message);  // Display any error message received from the server
+                        }
+                    });
+                })
+                .catch(console.error);  // Log any errors
+        });
+
+        document.getElementById('signup-form').addEventListener('submit', function (event) {
+            event.preventDefault()
+
+            // Get the username and password input values\
+            const fullname = document.getElementById('signup-fullname').value;
+            const username = document.getElementById('signup-username').value;
+            const password = document.getElementById('signup-password').value;
+
+            console.log("Fullname entered: ", fullname);
+            console.log("Username entered: ", username);
+            console.log("Password entered: ", password);
+
+            // Prepare the data to send as JSON
+            const formData = {
+                fullname: fullname,
+                username: username,
+                password: password
+            };
+
+            // Send a POST request to the server with the login data
+            fetch('/signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            })
+                .then(response => {
+                    return response.json().then(data => {
+                        if (response.ok && data.is_enter_dashboard) {
+                            window.location.href = '/dashboard';
+                        } else {
+                            alert(data.message);
+                        }
+                    });
+                })
+                .catch(console.error);  // Log any errors
+        });
+    </script>
+</body>
+</html>

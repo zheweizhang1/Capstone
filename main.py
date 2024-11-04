@@ -22,6 +22,7 @@ CORS(app, origins="http://localhost:3000", supports_credentials=True)  # Allow o
 '''
 app.config['SESSION_COOKIE_HTTPONLY'] = False
 app.secret_key = 'BAD_SEKRET_KEY'
+
 CORS(app, 
      resources={r"/*": {
          "origins": "http://localhost:3000",  # Change this to your frontend's origin
@@ -156,8 +157,13 @@ def upload_audio():
         audio_segment.export(audio_filename, format="wav")
     except Exception as e:
         print(f"Error converting audio file: {e}")
-    
-    # Transcription logic
+
+    # Check audio duration before transcription
+    audio_segment = AudioSegment.from_wav(audio_filename)
+    if audio_segment.duration_seconds < 0.5:  # Threshold for silence or very short audio
+        return jsonify({"error": "Audio too short or silent"}), 400
+
+# Transcription logic
     recognizer = sr.Recognizer()
     with sr.AudioFile(audio_filename) as source:
         audio_data = recognizer.record(source)
@@ -169,6 +175,9 @@ def upload_audio():
             return jsonify({"error": "Could not understand audio"}), 400
         except sr.RequestError:
             return jsonify({"error": "Speech recognition service error"}), 500
+        except Exception as e:
+            print(f"Unexpected error during transcription: {e}")
+        return jsonify({"error": "Unexpected error during transcription"}), 500
         
 @app.route('/api/handle_message', methods=['POST']) 
 def handle_message():
