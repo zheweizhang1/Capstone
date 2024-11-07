@@ -1,8 +1,7 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api/';
+const API_URL = 'http://127.0.0.1:5000/api/';
 axios.defaults.withCredentials = true;
-
 
 export const logInAPI = async (userData) => {
   try {
@@ -85,7 +84,7 @@ export const sendMessageAPI = async (formData) => {
     });
     return response.data;
   } catch (error) {
-    console.error("Error at uploadAudioAPI", error);
+    console.error("Error at sendMessageAPI", error);
     throw error;
   }
 };

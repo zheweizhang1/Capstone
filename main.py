@@ -1,4 +1,4 @@
-from flask import Flask, redirect, url_for, render_template, request, jsonify, session
+from flask import Flask, redirect, url_for, render_template, request, jsonify, session, make_response
 from flask_pymongo import PyMongo
 from bson import ObjectId
 from flask_cors import CORS,cross_origin
@@ -7,6 +7,12 @@ import speech_recognition as sr
 import os
 from pydub import AudioSegment
 import uuid
+from openai import OpenAI
+
+with open("API_KEY", "r") as file:
+        api_key = file.read().strip()
+client = OpenAI(api_key=api_key)
+
 
 
 
@@ -25,11 +31,23 @@ app.secret_key = 'BAD_SEKRET_KEY'
 
 CORS(app, 
      resources={r"/*": {
-         "origins": "http://localhost:3000",  # Change this to your frontend's origin
+         "origins": "*",  # Change this to your frontend's origin
          "supports_credentials": True,  # Allow credentials to be sent
          "allow_headers": ["Origin", "X-Requested-With", "Content-Type", "Accept"],
          "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
      }})
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+app.config['SESSION_COOKIE_SECURE'] = False  # Set to True if using HTTPS in production
+
+'''
+CORS(app,
+     resources={r"/*": {
+         "origins": ["http://localhost:3000"],
+         "supports_credentials": True
+     }},
+     supports_credentials=True)
+'''
+
 
 
 @app.route('/')
@@ -49,7 +67,7 @@ def get_user():
             return jsonify({
                 "firstname": user['firstname'],
                 "username": user['username']
-            }), 200  # OK status
+            }), 200
         else:
             return jsonify({"error": "Invalid username or password"}), 401  # Unauthorized
     except Exception as e:
@@ -164,30 +182,76 @@ def upload_audio():
         return jsonify({"error": "Audio too short or silent"}), 400
 
 # Transcription logic
-    recognizer = sr.Recognizer()
-    with sr.AudioFile(audio_filename) as source:
-        audio_data = recognizer.record(source)
-        try:
+    try:
+        # Attempt transcription
+        recognizer = sr.Recognizer()
+        with sr.AudioFile(audio_filename) as source:
+            audio_data = recognizer.record(source)
             text = recognizer.recognize_google(audio_data)
-            print(text)
-            return jsonify({"message": "Audio uploaded successfully", "transcription": text, "username": username}), 200
-        except sr.UnknownValueError:
-            return jsonify({"error": "Could not understand audio"}), 400
-        except sr.RequestError:
-            return jsonify({"error": "Speech recognition service error"}), 500
-        except Exception as e:
-            print(f"Unexpected error during transcription: {e}")
-        return jsonify({"error": "Unexpected error during transcription"}), 500
+            print("Transcribed text:", text)  # Debugging line
+    except sr.UnknownValueError:
+        text = "Could not understand audio"
+    except sr.RequestError:
+        text = "Speech recognition service error"
+    except Exception as e:
+        print(f"Unexpected error during transcription: {e}")
+        text = "Unexpected error during transcription"
+
+    # Prepare response
+    response = jsonify({
+        "message": "Audio uploaded successfully",
+        "transcription": text,
+        "username": username
+    })
+    response.headers.add("Access-Control-Allow-Origin", "http://localhost:3000")
+    response.headers.add("Access-Control-Allow-Credentials", "true")
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Pragma"] = "no-cache"
+    return response, 200
         
+import openai
+
 @app.route('/api/handle_message', methods=['POST']) 
 def handle_message():
     if 'message' not in request.form or 'username' not in request.form:
         return jsonify({"error": "Message or username missing"}), 400
     
-    message = request.form['message']
+    user_message = request.form['message']
     username = request.form['username']
-    print(message)
-    return jsonify({"message": "Message sent successfully", "text": message, "username": username}), 200
+    print(user_message)
+
+    emotion = "angry"
+    print("Trying CHATGPT")
+    try:
+        chat_completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+                {"role": "system", "content": f"You are a emotional support. We detected that the user is feeling {emotion}. Please respond very shortly to continue the conversation going."},
+                {
+                    "role": "user",
+                    "content": user_message
+                }
+            ]
+        )
+        chatgpt_response = chat_completion.choices[0].message.content
+        print(chatgpt_response)
+
+        response = jsonify({
+            "message": "Message processed successfully",
+            "response": chatgpt_response,
+            "username": username
+        })
+        response.headers.add("Access-Control-Allow-Origin", "http://localhost:3000")
+        response.headers.add("Access-Control-Allow-Credentials", "true")
+        response.headers["Cache-Control"] = "no-store"
+        response.headers["Pragma"] = "no-cache"
+        return response, 200
+
+    except Exception as e:
+        # Handle any other unexpected errors
+        print("Unexpected error during ChatGPT API call:", str(e))
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
+
     
             
 '''        
@@ -213,5 +277,5 @@ def audiorecog():
 '''
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(port=5000, debug=True)
 

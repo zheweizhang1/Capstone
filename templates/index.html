@@ -58,7 +58,7 @@
             };
 
             // Send a POST request to the server with the login data
-            fetch('/login', {
+            fetch('/api/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)
@@ -96,7 +96,7 @@
             };
 
             // Send a POST request to the server with the login data
-            fetch('/signup', {
+            fetch('/api/signup', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)

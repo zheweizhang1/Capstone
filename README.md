@@ -45,3 +45,17 @@ FFMPEG for Windows. Place donwloaded bin files into C\:ffmpeg (create ffmpeg fol
 Command line -> Type env -> Click on "Path" -> "Edit" -> "New" -> Paste "C\:ffmpeg" -> OK
 
 FFMPEG Donwload https://ffmpeg.org/download.html
+
+
+If errors about watchdog
+pip install --upgrade watchdog
+
+Reinstall watchdog:
+pip uninstall watchdog
+pip install watchdog
+
+
+Make sure to create "recordings" folder inside /capstone folder
+
+ChatGPT
+pip install openai
