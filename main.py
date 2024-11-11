@@ -8,6 +8,12 @@ import os
 from pydub import AudioSegment
 import uuid
 from openai import OpenAI
+from transformers import pipeline, RobertaTokenizerFast, TFRobertaForSequenceClassification
+
+tokenizer = RobertaTokenizerFast.from_pretrained("arpanghoshal/EmoRoBERTa")
+model = TFRobertaForSequenceClassification.from_pretrained("arpanghoshal/EmoRoBERTa")
+emotion = pipeline('sentiment-analysis', 
+                    model='arpanghoshal/EmoRoBERTa')
 
 with open("API_KEY", "r") as file:
         api_key = file.read().strip()
@@ -213,6 +219,7 @@ import openai
 
 @app.route('/api/handle_message', methods=['POST']) 
 def handle_message():
+    global emotion
     if 'message' not in request.form or 'username' not in request.form:
         return jsonify({"error": "Message or username missing"}), 400
     
@@ -220,13 +227,17 @@ def handle_message():
     username = request.form['username']
     print(user_message)
 
-    emotion = "angry"
-    print("Trying CHATGPT")
+    
+    
+    emotion_label = emotion(user_message)
+    print(f"Trying CHATGPT. The emotion is {emotion_label}")
     try:
         chat_completion = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
-                {"role": "system", "content": f"You are a emotional support. We detected that the user is feeling {emotion}. Please respond very shortly to continue the conversation going."},
+                {"role": "system", "content": f"""You are a emotional support. We detected that the user is feeling {emotion_label}.
+                                                Please respond shortly to continue the conversation going
+                                                so that it would lead us to know user's emotional state."""},
                 {
                     "role": "user",
                     "content": user_message
@@ -252,29 +263,6 @@ def handle_message():
         print("Unexpected error during ChatGPT API call:", str(e))
         return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
-    
-            
-'''        
-@app.route('/audiorecog', methods = ['GET', 'POST'])
-def audiorecog():
-   if request.method == 'POST':
-      print("Recieved Audio File")
-      file = request.files['file']
-      recognizer = sr.Recognizer()
-      with sr.AudioFile(temp_path) as source:
-        audio_data = recognizer.record(source)
-        try:
-            text = recognizer.recognize_google(audio_data)
-
-            # Insert into database (example placeholder)
-            # db.collection.insert_one({"username": username, "transcription": text})
-
-            return jsonify({"transcription": text, "username": username})
-        except sr.UnknownValueError:
-            return jsonify({"error": "Could not understand audio"}), 400
-        except sr.RequestError:
-            return jsonify({"error": "Speech recognition service error"}), 500
-'''
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True)

@@ -59,3 +59,16 @@ Make sure to create "recordings" folder inside /capstone folder
 
 ChatGPT
 pip install openai
+
+
+# NLP emotion in text
+pip install transformers pipeline
+pip install tf-keras
+
+# Requires the latest pip
+pip install --upgrade pip
+
+# Current stable release for CPU and GPU
+pip install tensorflow
+
+pip install huggingface_hub
