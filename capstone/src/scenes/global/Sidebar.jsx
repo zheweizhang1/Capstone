@@ -160,6 +160,7 @@ const Sidebar = () => {
             >
               Data
             </Typography>
+            {/*
             <Item
               title="Manage Team"
               to="/team"
@@ -174,6 +175,7 @@ const Sidebar = () => {
               selected={selected}
               setSelected={setSelected}
             />
+            */}
             <Item
               title="Recording"
               to="/recording"
@@ -218,6 +220,7 @@ const Sidebar = () => {
             >
               Charts
             </Typography>
+            {/*
             <Item
               title="Bar Chart"
               to="/bar"
@@ -225,6 +228,7 @@ const Sidebar = () => {
               selected={selected}
               setSelected={setSelected}
             />
+            */}
             <Item
               title="Pie Chart"
               to="/pie"
@@ -239,6 +243,7 @@ const Sidebar = () => {
               selected={selected}
               setSelected={setSelected}
             />
+            {/*
             <Item
               title="Geography Chart"
               to="/geography"
@@ -246,6 +251,7 @@ const Sidebar = () => {
               selected={selected}
               setSelected={setSelected}
             />
+            */}
           </Box>
         </Menu>
       </ProSidebar>

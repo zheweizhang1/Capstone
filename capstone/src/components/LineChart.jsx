@@ -3,9 +3,34 @@ import { useTheme } from "@mui/material";
 import { tokens } from "../theme";
 import { mockLineData as data } from "../data/mockData";
 
+import { getMessageCountsForLineChartAPI } from '../api';
+import { useUser } from "../UserContext";
+import { useState, useEffect } from "react";
+
 const LineChart = ({ isCustomLineColors = false, isDashboard = false }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+
+  const [data, setMessageCountsData] = useState([]);
+
+  const { user } = useUser();
+  useEffect(() => {
+    const fetchMessageCountsData = async () => {
+      console.log("Trying to get user's {" + user.username + "} line chart message counts");
+      try {
+        const response = await getMessageCountsForLineChartAPI(user.username);
+        if (!Array.isArray(response)) {
+          console.error("Failed to fetch message counts data:", response);
+          return;
+        }
+        console.log("Fetched message counts data:", response);
+        setMessageCountsData(response);
+      } catch (error) {
+        console.error("Error fetching messages count data:", error);
+      }
+    };
+    fetchMessageCountsData();
+  }, []);
 
   return (
     <ResponsiveLine
@@ -50,7 +75,7 @@ const LineChart = ({ isCustomLineColors = false, isDashboard = false }) => {
         type: "linear",
         min: "auto",
         max: "auto",
-        stacked: true,
+        stacked: false,
         reverse: false,
       }}
       yFormat=" >-.2f"

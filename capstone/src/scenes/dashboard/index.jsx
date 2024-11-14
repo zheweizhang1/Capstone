@@ -13,9 +13,43 @@ import BarChart from "../../components/BarChart";
 import StatBox from "../../components/StatBox";
 import ProgressCircle from "../../components/ProgressCircle";
 
+import { getTotalMessagesOfUserAPI } from "../../api";
+import { useUser } from "../../UserContext";
+import { useState, useEffect } from "react";
+import PieChart from "../../components/PieChart";
+
+/* 
+  TO DO
+  Total users count
+  Messages processedd count
+  Most dominating emotion
+
+*/
 const Dashboard = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+
+  const [totalMessages, setTotalMessages] = useState(0);
+  const { user } = useUser();
+  useEffect(() => {
+    const fetchTotalMessages = async () => {
+      console.log("Trying to get user's {" + user.username + "} total message count");
+      try {
+        const response = await fetch(`http://127.0.0.1:5000/api/get_total_messages?username=${user.username}`);
+        const data = await response.json();
+
+        if (response.ok) {
+          console.log("Fetched total message count:", data);
+          setTotalMessages(data.totalMessages); // Assuming you store this in state
+        } else {
+          console.error("Failed to fetch total message count:", data);
+        }
+      } catch (error) {
+        console.error("Error fetching total message count:", error);
+      }
+    };
+    fetchTotalMessages();
+  }, [user.username]);
 
   return (
     <Box m="20px">
@@ -143,14 +177,14 @@ const Dashboard = () => {
                 fontWeight="600"
                 color={colors.grey[100]}
               >
-                Revenue Generated
+                Total messages
               </Typography>
               <Typography
                 variant="h3"
                 fontWeight="bold"
                 color={colors.greenAccent[500]}
               >
-                $59,342.32
+                {totalMessages}
               </Typography>
             </Box>
             <Box>
@@ -180,43 +214,14 @@ const Dashboard = () => {
             p="15px"
           >
             <Typography color={colors.grey[100]} variant="h5" fontWeight="600">
-              Recent Transactions
+              Emotion Pie Chart
             </Typography>
           </Box>
-          {mockTransactions.map((transaction, i) => (
-            <Box
-              key={`${transaction.txId}-${i}`}
-              display="flex"
-              justifyContent="space-between"
-              alignItems="center"
-              borderBottom={`4px solid ${colors.primary[500]}`}
-              p="15px"
-            >
-              <Box>
-                <Typography
-                  color={colors.greenAccent[500]}
-                  variant="h5"
-                  fontWeight="600"
-                >
-                  {transaction.txId}
-                </Typography>
-                <Typography color={colors.grey[100]}>
-                  {transaction.user}
-                </Typography>
-              </Box>
-              <Box color={colors.grey[100]}>{transaction.date}</Box>
-              <Box
-                backgroundColor={colors.greenAccent[500]}
-                p="5px 10px"
-                borderRadius="4px"
-              >
-                ${transaction.cost}
-              </Box>
+            <Box height="28vh">
+             <PieChart />  {/* This will render the PieChart */}
             </Box>
-          ))}
-        </Box>
-
-        {/* ROW 3 */}
+          </Box>
+        {/*
         <Box
           gridColumn="span 4"
           gridRow="span 2"
@@ -276,6 +281,7 @@ const Dashboard = () => {
             <GeographyChart isDashboard={true} />
           </Box>
         </Box>
+        */}
       </Box>
     </Box>
   );

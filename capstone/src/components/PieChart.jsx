@@ -3,37 +3,34 @@ import { tokens } from "../theme";
 import { useTheme } from "@mui/material";
 import { mockPieData as data } from "../data/mockData";
 
-import { getPieChartData } from '../api';
-import { useUser } from '../UserContext';
-import { useEffect } from "react";
-import axios from 'axios';
+import { getEmotionCountsForPieChartAPI } from '../api';
+import { useUser } from "../UserContext";
+import { useState, useEffect } from "react";
 
 const PieChart = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 
-  /*
-  // Extracting pie chart data for visualization TO DO
+  const [data, setEmotionCountsData] = useState([]);
+
   const { user } = useUser();
   useEffect(() => {
-    const fetchEvents = async () => {
-      console.log("Trying to get user's {" + user.username + "} events");
+    const fetchEmotionCountsData = async () => {
+      console.log("Trying to get user's {" + user.username + "} pie chart emotion counts");
       try {
-        const response = await getEventsAPI(user.username);
+        const response = await getEmotionCountsForPieChartAPI(user.username);        
         if (!Array.isArray(response)) {
-          console.error("Expected an array, but got:", response);
+          console.error("Failed to fetch emotion count data:", response);
           return;
         }
-        console.log("Fetched events:", response);
-        setCurrentEvents(response);
+        console.log("Fetched emotion count data:", response);
+        setEmotionCountsData(response);
       } catch (error) {
-        console.error("Error fetching events:", error);
+        console.error("Error fetching emotion count data:", error);
       }
     };
-
-    fetchEvents();
+    fetchEmotionCountsData()
   }, [user.username]);
-  */
 
   return (
     <ResponsivePie

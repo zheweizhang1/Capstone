@@ -73,3 +73,6 @@ pip install tensorflow
 
 pip install huggingface_hub
 to authenticate huggingface-cli login
+
+pip install transformers torch datasets
+

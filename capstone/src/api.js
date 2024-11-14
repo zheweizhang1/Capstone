@@ -59,7 +59,7 @@ export const getEventsAPI = async (username) => {
 
 export const uploadAudioAPI = async (formData) => {
   try {
-    const response = await axios.post(`${API_URL}upload_audio`, formData, {
+    const response = await axios.post(`${API_URL}handle_audio_message`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       },
@@ -74,7 +74,7 @@ export const uploadAudioAPI = async (formData) => {
 
 export const sendMessageAPI = async (formData) => {
   try {
-    const response = await axios.post(`${API_URL}handle_message`, formData, {
+    const response = await axios.post(`${API_URL}handle_text_message`, formData, {
       /*
       headers: {
         'Content-Type': 'multipart/form-data'
@@ -89,14 +89,38 @@ export const sendMessageAPI = async (formData) => {
   }
 };
 
-export const getPieChartData = async (username) => {
+export const getEmotionCountsForPieChartAPI = async (username) => {
   try {
-    const response = await axios.get(`${API_URL}fetchPieChartData`, {
+    const response = await axios.get(`${API_URL}get_emotion_counts_for_pie_chart`, {
       params: { username }  // Send username as a query parameter
     });
     return response.data;
   } catch (error) {
-    console.error("Error at getPieChartData", error);
+    console.error("Error at getEmotionCountsForPieChartAPI", error);
+    throw error;
+  }
+};
+
+export const getMessageCountsForLineChartAPI = async (username) => {
+  try {
+    const response = await axios.get(`${API_URL}get_messages_counts_for_line_chart`, {
+      params: { username }  // Send username as a query parameter
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error at getMessagesCountsForLineChartAPI", error);
+    throw error;
+  }
+};
+
+export const getTotalMessagesOfUserAPI = async (username) => {
+  try {
+    const response = await axios.get(`${API_URL}get_total_messages`, {
+      params: { username }  // Send username as a query parameter
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error at getTotalMessagesOfUserAPI", error);
     throw error;
   }
 };
