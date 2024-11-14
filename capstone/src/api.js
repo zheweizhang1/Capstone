@@ -88,3 +88,15 @@ export const sendMessageAPI = async (formData) => {
     throw error;
   }
 };
+
+export const getPieChartData = async (username) => {
+  try {
+    const response = await axios.get(`${API_URL}fetchPieChartData`, {
+      params: { username }  // Send username as a query parameter
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error at getPieChartData", error);
+    throw error;
+  }
+};

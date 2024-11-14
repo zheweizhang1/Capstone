@@ -3,9 +3,38 @@ import { tokens } from "../theme";
 import { useTheme } from "@mui/material";
 import { mockPieData as data } from "../data/mockData";
 
+import { getPieChartData } from '../api';
+import { useUser } from '../UserContext';
+import { useEffect } from "react";
+import axios from 'axios';
+
 const PieChart = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+
+  /*
+  // Extracting pie chart data for visualization TO DO
+  const { user } = useUser();
+  useEffect(() => {
+    const fetchEvents = async () => {
+      console.log("Trying to get user's {" + user.username + "} events");
+      try {
+        const response = await getEventsAPI(user.username);
+        if (!Array.isArray(response)) {
+          console.error("Expected an array, but got:", response);
+          return;
+        }
+        console.log("Fetched events:", response);
+        setCurrentEvents(response);
+      } catch (error) {
+        console.error("Error fetching events:", error);
+      }
+    };
+
+    fetchEvents();
+  }, [user.username]);
+  */
+
   return (
     <ResponsivePie
       data={data}

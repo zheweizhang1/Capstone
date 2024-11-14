@@ -72,3 +72,4 @@ pip install --upgrade pip
 pip install tensorflow
 
 pip install huggingface_hub
+to authenticate huggingface-cli login
