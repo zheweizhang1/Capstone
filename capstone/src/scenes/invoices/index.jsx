@@ -1,4 +1,11 @@
-import { Box, TextField, IconButton } from "@mui/material";
+import {
+  Box,
+  TextField,
+  IconButton,
+  List,
+  ListItem,
+  ListItemText,
+} from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import Header from "../../components/Header";
 import { useState, useRef } from "react";
@@ -19,13 +26,58 @@ const Recording = () => {
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
 
+  const isDarkMode = theme.palette.mode === "dark"; // Check if dark mode is enabled
+  const [chatMessages, setChatMessages] = useState([]); // Chat messages state
+
+  const { user } = useUser(); // Access loginUser from UserContext
+
+  /*
+  // Simulate API response with fake data
+  const fakeApiResponse = (userMessage) => {
+    if (userMessage.toLowerCase().includes("hello")) {
+      return "Hi there! How can I assist you today?";
+    } else if (userMessage.toLowerCase().includes("recording")) {
+      return "Recording functionality is enabled. Go ahead!";
+    } else {
+      return "Sorry, I didn’t quite get that. Can you please rephrase?";
+    }
+  };
+  */
+
+  // Handle sending user messages
   const handleSubmit = async () => {
-    console.log(inputValue);
+    if (inputValue.trim() === "") return;
+
+    // Add user message to chat
+    setChatMessages((prev) => [
+      ...prev,
+      { sender: "user", text: inputValue },
+    ]);
+
+    //----------
     const formData = new FormData();
     formData.append("username", user.username);
     formData.append("message", inputValue);
     const response = await sendMessageAPI(formData);
     console.log('Sending the message. Response: ', response);
+    //----------
+
+    // Simulated API response
+    /*
+    const fakeResponse = fakeApiResponse(inputValue); // Remove this when API is working
+    const responseMessage = fakeResponse; // Replace this with the actual response data
+    */
+
+    // Add bot response to chat
+    setTimeout(() => {
+      setChatMessages((prev) => [
+        ...prev,
+        { sender: "bot", text: response.response }, // Use actual API response here
+      ]);
+    }, 1000);
+
+    // Clear input
+    setInputValue("");
   };
 
   const startRecording = () => {
@@ -51,6 +103,15 @@ const Recording = () => {
   
           const response = await uploadAudioAPI(formData);
           console.log('Sending the recording. Response: ', response);
+
+          setChatMessages((prev) => [
+            ...prev,
+            { sender: "user", text: response.user_message },
+          ]);
+          setChatMessages((prev) => [
+            ...prev,
+            { sender: "bot", text: response.response }, // Use actual API response here
+          ]);
         };
   
         mediaRecorder.start();
@@ -65,7 +126,6 @@ const Recording = () => {
     setIsRecording(false);
   };
 
-  const { user } = useUser(); // Access loginUser from UserContext
   useEffect(() => {
     const console_log_lastname = async (e) => {
       console.log("Trying to get user's {" + user.username + "} last name");
@@ -85,9 +145,6 @@ const Recording = () => {
     }
     console_log_lastname();
   }, []);
-
-
-
 
   return (
     <Box m="20px">
@@ -125,13 +182,55 @@ const Recording = () => {
           sx={{
             backgroundColor: theme.palette.primary.main,
             color: theme.palette.common.white,
-            '&:hover': {
+            "&:hover": {
               backgroundColor: theme.palette.primary.dark,
             },
           }}
         >
           <PlayArrowOutlinedIcon sx={{ fontSize: 40 }} />
         </IconButton>
+      </Box>
+
+      {/* Chatbox */}
+      <Box
+        mt="20px"
+        p="10px"
+        borderRadius="10px"
+        border={`1px solid ${theme.palette.divider}`}
+        maxHeight="400px"
+        overflow="auto"
+      >
+        <List>
+          {chatMessages.map((message, index) => (
+            <ListItem
+              key={index}
+              sx={{
+                justifyContent:
+                  message.sender === "user" ? "flex-end" : "flex-start",
+              }}
+            >
+              <ListItemText
+                primary={message.text}
+                sx={{
+                  textAlign: message.sender === "user" ? "right" : "left",
+                  backgroundColor:
+                    message.sender === "user"
+                      ? theme.palette.primary.light
+                      : theme.palette.grey[200],
+                  color:
+                    message.sender === "user"
+                      ? theme.palette.common.white
+                      : message.sender === "bot" && isDarkMode
+                      ? "#3d3d3d" 
+                      : theme.palette.text.primary, 
+                  borderRadius: "10px",
+                  padding: "10px",
+                  maxWidth: "70%",
+                }}
+              />
+            </ListItem>
+          ))}
+        </List>
       </Box>
     </Box>
   );

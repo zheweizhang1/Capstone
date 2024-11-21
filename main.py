@@ -223,7 +223,7 @@ def handle_audio_message():
     emotion_list = emotion_recognition(audio_filename)
     detected_emotion = max(emotion_list, key=lambda x: x['score'])['label']  # Get the top emotion
 
-    insert_emotion_verdict(username, detected_emotion, "audio")
+    insert_emotion_verdict(username, detected_emotion, transcription, "audio")
 
     server_response = generate_chatgpt_response(transcription, detected_emotion)
 
@@ -232,17 +232,19 @@ def handle_audio_message():
 
 # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 # Both handle_audio_message and handle_text_message uses functions in this X block
-def insert_emotion_verdict(username, emotion_verdict, type):
+def insert_emotion_verdict(username, emotion_verdict, user_message, type):
     timestamp = datetime.now()
     db.logs.insert_one({
         "username": username,
         "emotion": emotion_verdict,
+        "user_message": user_message,
         "timestamp": timestamp,
         "type": type, # audio or text
     })
     print(f"Log inserted. User: {username} with emotion: {emotion_verdict} this day: {timestamp}")
 
 def generate_chatgpt_response(user_message, detected_emotion):
+    
     try:
         chat_completion = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -266,11 +268,11 @@ def generate_chatgpt_response(user_message, detected_emotion):
         print("ChatGPT UNEXPECTED ERROR")
         return "An unexpected error occurred. Please try again"
     
-def create_json_response(message, user_message, detected_emotion, server_response):
+def create_json_response(message, detected_emotion, user_message, server_response):
     return jsonify({
         "message": message,
-        "user_message": user_message,
         "detected_emotion": detected_emotion,
+        "user_message": user_message,
         "response": server_response
     }), 200
 # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -288,7 +290,7 @@ def handle_text_message():
     emotion_list = emotion(user_message)
     detected_emotion = emotion_list[0]['label']
     
-    insert_emotion_verdict(username, detected_emotion, "text")
+    insert_emotion_verdict(username, detected_emotion, user_message, "text")
 
     server_response = generate_chatgpt_response(user_message, detected_emotion)
 
@@ -420,8 +422,26 @@ def get_total_messages():
     total_messages = messages_collection.count_documents({"username": username})
 
     print(f"Total messages for user {username} is {total_messages}")
+    
+    # TEMP
+    get_n_recent_user_messages("Sagiri", 6)
+
     return jsonify({"totalMessages": total_messages}), 200
 # ------------------------------------------------------------------------------------
+
+
+def get_n_recent_user_messages(this_username, n_of_messages):
+    latest_records = messages_collection.find(
+        { "username": this_username },  # Filter for the specific username
+        { "user_message": 1 }  # Projection: only include user_message, exclude _id
+    ).sort("timestamp.date", -1).limit(n_of_messages)
+
+    # Convert to a list
+    latest_records_list = list(latest_records)
+
+    # Print the results
+    print(latest_records_list)
+    return
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True)
