@@ -45,15 +45,19 @@ const LineChart = ({ isCustomLineColors = false, isDashboard = false }) => {
           legend: {
             text: {
               fill: colors.grey[100],
+              fontSize: 35,
             },
           },
           ticks: {
             line: {
               stroke: colors.grey[100],
               strokeWidth: 1,
+              
             },
             text: {
               fill: colors.grey[100],
+              fontSize: 20,
+
             },
           },
         },
@@ -73,7 +77,7 @@ const LineChart = ({ isCustomLineColors = false, isDashboard = false }) => {
       xScale={{ type: "point" }}
       yScale={{
         type: "linear",
-        min: "auto",
+        min: 1,
         max: "auto",
         stacked: false,
         reverse: false,
@@ -87,7 +91,7 @@ const LineChart = ({ isCustomLineColors = false, isDashboard = false }) => {
         tickSize: 0,
         tickPadding: 5,
         tickRotation: 0,
-        legend: isDashboard ? undefined : "transportation", // added
+        legend: isDashboard ? undefined : "Chat Logs by Type & Date", // added
         legendOffset: 36,
         legendPosition: "middle",
       }}
@@ -97,7 +101,7 @@ const LineChart = ({ isCustomLineColors = false, isDashboard = false }) => {
         tickSize: 3,
         tickPadding: 5,
         tickRotation: 0,
-        legend: isDashboard ? undefined : "count", // added
+        legend: isDashboard ? undefined : "Count", // added
         legendOffset: -40,
         legendPosition: "middle",
       }}

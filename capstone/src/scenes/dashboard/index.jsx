@@ -88,9 +88,10 @@ const Dashboard = () => {
           alignItems="center"
           justifyContent="center"
         >
+          {/* TODO: Display some useful information */}
           <StatBox
-            title="12,361"
-            subtitle="Emails Sent"
+            title="BOX 1.1"
+            subtitle="BOX 1.2"
             progress="0.75"
             increase="+14%"
             icon={
@@ -107,9 +108,10 @@ const Dashboard = () => {
           alignItems="center"
           justifyContent="center"
         >
+          {/* TODO: Display some useful information */}
           <StatBox
-            title="431,225"
-            subtitle="Sales Obtained"
+            title="BOX 2.1"
+            subtitle="BOX 2.2"
             progress="0.50"
             increase="+21%"
             icon={
@@ -126,9 +128,10 @@ const Dashboard = () => {
           alignItems="center"
           justifyContent="center"
         >
+          {/* TODO: Display some useful information */}
           <StatBox
-            title="32,441"
-            subtitle="New Clients"
+            title="BOX 3.1"
+            subtitle="BOX 3.2"
             progress="0.30"
             increase="+5%"
             icon={
@@ -145,9 +148,10 @@ const Dashboard = () => {
           alignItems="center"
           justifyContent="center"
         >
+          {/* TODO: Display some useful information */}
           <StatBox
-            title="1,325,134"
-            subtitle="Traffic Received"
+            title="BOX 4.1"
+            subtitle="BOX 4.2"
             progress="0.80"
             increase="+43%"
             icon={

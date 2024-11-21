@@ -226,8 +226,8 @@ def handle_audio_message():
     insert_emotion_verdict(username, detected_emotion, transcription, "audio")
 
     server_response = generate_chatgpt_response(transcription, detected_emotion)
-
-    return create_json_response("The audio message has been processed", transcription, detected_emotion, server_response)
+    user_message = transcription
+    return create_json_response("The audio message has been processed", detected_emotion, user_message, server_response)
 # ------------------------------------------------------------------------------------
 
 # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -294,7 +294,7 @@ def handle_text_message():
 
     server_response = generate_chatgpt_response(user_message, detected_emotion)
 
-    return create_json_response("The text message has been processed", user_message, detected_emotion, server_response)
+    return create_json_response("The text message has been processed", detected_emotion, user_message, server_response)
 # ------------------------------------------------------------------------------------
 
 

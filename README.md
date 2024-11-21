@@ -76,3 +76,6 @@ to authenticate huggingface-cli login
 
 pip install transformers torch datasets
 
+pip install torch torchvision torchaudio
+
+
