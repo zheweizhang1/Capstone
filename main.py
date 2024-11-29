@@ -223,6 +223,11 @@ def handle_audio_message():
     emotion_list = emotion_recognition(audio_filename)
     detected_emotion = max(emotion_list, key=lambda x: x['score'])['label']  # Get the top emotion
 
+    ''' 
+    EMOTION TYPES IF DETERMINED BY AUDIO:
+        'angry', 'calm', 'disgust', 'fearful', 'happy', 'neutral', 'sad', 'surprised'
+    '''
+
     insert_emotion_verdict(username, detected_emotion, transcription, "audio")
 
     server_response = generate_chatgpt_response(transcription, detected_emotion)
@@ -289,6 +294,14 @@ def handle_text_message():
 
     emotion_list = emotion(user_message)
     detected_emotion = emotion_list[0]['label']
+
+    ''' 
+    EMOTION TYPES IF DETERMINED BY TEXT:
+        admiration, amusement, anger, annoyance, approval, caring, confusion,
+        curiosity, desire, disappointment, disapproval, disgust, embarrassment,
+        excitement, fear, gratitude, grief, joy, love, nervousness, optimism,
+        pride,realization, relief, remorse, sadness, surprise + neutral
+    '''
     
     insert_emotion_verdict(username, detected_emotion, user_message, "text")
 
