@@ -151,8 +151,9 @@ def get_user_logs_endpoint():
     return jsonify(session.get('user_logs'))
 
 def get_user_logs():
+    from collections import Counter
+
     username = session.get('username')
-    
     logs = list(db.logs.find({"username": username}))  # Convert cursor to list
     if not logs:
         return []
@@ -161,7 +162,7 @@ def get_user_logs():
     emotions_by_date = {}
     for log in logs:
         log_date = strip_time_from_timestamp(log['timestamp'])
-        emotion = log['emotion']
+        emotion = log['emotion'].lower()
         if log_date not in emotions_by_date:
             emotions_by_date[log_date] = []
         emotions_by_date[log_date].append(emotion)
@@ -172,19 +173,21 @@ def get_user_logs():
         most_common_emotion = Counter(emotions).most_common(1)[0][0]  # Get the emotion with the highest count
         most_common_emotions.append({
             "date": log_date,
-            "emotion": most_common_emotion
+            "emotion": most_common_emotion.title(),
+            "color": emotion_colors.get(most_common_emotion, "hsl(0, 0%, 50%)")  # Default is 0 0 50% if no match
         })
 
     # Format the logs for calendar events
     formatted_logs = [
         {
-            "id": str(index),
             "title": f"{log['emotion']}",
             "date": log['date'],
+            "color": log["color"]
         }
         for index, log in enumerate(most_common_emotions)
     ]
     return formatted_logs
+
     
 def strip_time_from_timestamp(date_value):
     return date_value.date().isoformat()
@@ -377,7 +380,7 @@ def handle_text_message():
 
 
 # ------------------------------------------------------------------------------------
-# TO DO PIE CHART FETCH
+# PIE CHART FETCH
 @app.route('/api/get_emotion_counts_for_pie_chart', methods=['GET'])
 def get_emotion_counts_for_pie_chart():
     username = request.args.get('username')
@@ -400,7 +403,7 @@ def get_emotion_counts_for_pie_chart():
                 "id": emotion,
                 "label": emotion,
                 "value": count,
-                "color": get_color_for_emotion(emotion)  # Add a function to assign colors to emotions
+                "color": emotion_colors.get(emotion, "hsl(0, 0%, 50%)")  # Default is 0 0 50% if no match
             }
             for emotion, count in emotion_counts.items()
         ]
@@ -409,6 +412,46 @@ def get_emotion_counts_for_pie_chart():
     except Exception as e:
         return jsonify({"error": str(e)}), 500  # Internal server error
 
+# Dictionary
+emotion_colors = {
+    "angry": "hsl(344, 70%, 50%)",        # Red
+    "calm": "hsl(200, 70%, 50%)",         # Blue
+    "disgust": "hsl(120, 70%, 50%)",      # Green
+    "fearful": "hsl(0, 70%, 50%)",        # Dark red
+    "happy": "hsl(291, 70%, 50%)",        # Pink
+    "neutral": "hsl(104, 70%, 50%)",      # Neutral green
+    "sad": "hsl(229, 70%, 50%)",          # Blue
+    "surprised": "hsl(344, 70%, 50%)",    # Red
+    "admiration": "hsl(200, 70%, 50%)",   # Light blue
+    "amusement": "hsl(40, 70%, 50%)",     # Yellow
+    "anger": "hsl(344, 70%, 50%)",        # Red
+    "annoyance": "hsl(30, 70%, 50%)",     # Orange
+    "approval": "hsl(120, 70%, 50%)",     # Green
+    "caring": "hsl(150, 70%, 50%)",       # Light green
+    "confusion": "hsl(240, 70%, 50%)",    # Purple
+    "curiosity": "hsl(60, 70%, 50%)",     # Yellow
+    "desire": "hsl(340, 70%, 50%)",       # Deep red
+    "disappointment": "hsl(200, 70%, 50%)", # Blue
+    "disapproval": "hsl(0, 70%, 50%)",    # Dark red
+    "embarrassment": "hsl(350, 70%, 50%)", # Light red
+    "excitement": "hsl(50, 70%, 50%)",    # Bright yellow
+    "fear": "hsl(0, 70%, 50%)",           # Dark red
+    "gratitude": "hsl(90, 70%, 50%)",     # Light green
+    "grief": "hsl(230, 70%, 50%)",        # Dark blue
+    "joy": "hsl(35, 70%, 50%)",           # Orange-yellow
+    "love": "hsl(330, 70%, 50%)",         # Red
+    "nervousness": "hsl(190, 70%, 50%)",  # Light blue
+    "optimism": "hsl(60, 70%, 50%)",      # Yellow
+    "pride": "hsl(300, 70%, 50%)",        # Purple
+    "realization": "hsl(180, 70%, 50%)",  # Teal
+    "relief": "hsl(160, 70%, 50%)",       # Light green
+    "remorse": "hsl(280, 70%, 50%)",      # Purple
+    "sadness": "hsl(230, 70%, 50%)",      # Dark blue
+    "surprise": "hsl(344, 70%, 50%)",     # Red
+}
+
+
+'''
 def get_color_for_emotion(emotion):
     """Assign a unique color to each emotion"""
     emotion_colors = {
@@ -421,6 +464,7 @@ def get_color_for_emotion(emotion):
         "Unknown": "hsl(0, 0%, 50%)",  # Default color for undefined emotions
     }
     return emotion_colors.get(emotion, "hsl(0, 0%, 50%)")  # Default color if no match
+'''
 # ------------------------------------------------------------------------------------
 
 

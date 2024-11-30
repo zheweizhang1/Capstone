@@ -60,8 +60,13 @@ const Calendar = () => {
           console.error("Expected an array, but got:", response);
           return;
         }
-        console.log("Fetched events:", response);
-        setCurrentEvents(response);
+        // Map response to add backgroundColor to each event
+        const formattedEvents = response.map((event) => ({
+          ...event,
+          backgroundColor: event.color, // Use the color from the API
+        }));
+        console.log("Fetched events:", formattedEvents);
+        setCurrentEvents(formattedEvents);
       } catch (error) {
         console.error("Error fetching events:", error);
       }
@@ -88,7 +93,7 @@ const Calendar = () => {
               <ListItem
                 key={event.id}
                 sx={{
-                  backgroundColor: colors.greenAccent[500],
+                  backgroundColor: event.backgroundColor || colors.greenAccent[500], // Default color if no color is provided
                   margin: "10px 0",
                   borderRadius: "2px",
                 }}
@@ -97,7 +102,7 @@ const Calendar = () => {
                   primary={event.title}
                   secondary={
                     <Typography>
-                      {formatDate(event.start, {
+                      {formatDate(new Date(event.date), {
                         year: "numeric",
                         month: "short",
                         day: "numeric",
@@ -117,8 +122,8 @@ const Calendar = () => {
             plugins={[
               dayGridPlugin,
               timeGridPlugin,
-              interactionPlugin,
-              listPlugin,
+              interactionPlugin, 
+              listPlugin
             ]}
             headerToolbar={{
               left: "prev,next today",
@@ -132,7 +137,10 @@ const Calendar = () => {
             dayMaxEvents={true}
             select={handleDateClick}
             eventClick={handleEventClick}
-            events={currentEvents}
+            events={currentEvents.map((event) => ({
+              ...event,
+              backgroundColor: event.backgroundColor || colors.greenAccent[500],
+            }))}
           />
         </Box>
       </Box>
