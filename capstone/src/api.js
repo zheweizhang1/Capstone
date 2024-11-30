@@ -134,3 +134,15 @@ export const getTodaysMessagesAPI = async () => {
     throw error;
   }
 };
+
+export const logoutAPI = async () => {
+  try {
+    const response = await axios.post(`${API_URL}logout_endpoint`, {}, {
+      withCredentials: true
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error at logoutAPI", error);
+    throw error;
+  }
+};

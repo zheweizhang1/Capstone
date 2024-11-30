@@ -12,8 +12,8 @@ export const UserProvider = ({ children }) => {
   const loginUser = (userData) => {
     setUser(userData);
   };
-
-  const logoutUser = () => {
+    
+  const logoutUser = async (e) => {
     setUser({ username: "Guest" }); // Reset to "Guest" on logout
   };
 

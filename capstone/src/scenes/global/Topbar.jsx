@@ -10,6 +10,8 @@ import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import PersonOutlinedIcon from "@mui/icons-material/PersonOutlined";
 import SearchIcon from "@mui/icons-material/Search";
 
+import { logoutAPI } from '../../api';
+
 const Topbar = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -30,7 +32,11 @@ const Topbar = () => {
   };
 
   // Handle logout
-  const handleLogout = () => {
+  const handleLogout = async (e) => {
+    e.preventDefault();
+    const response = await logoutAPI();
+    console.log('Response:', response);
+
     handleMenuClose(); // Close the menu before redirecting
     navigate("/"); // Redirect to home
   };

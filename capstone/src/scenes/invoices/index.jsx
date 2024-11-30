@@ -30,6 +30,7 @@ const Recording = () => {
   const [chatMessages, setChatMessages] = useState([]); // Chat messages state
 
   const { user } = useUser(); // Access loginUser from UserContext
+  const isTodaysMessagesFetched = useRef(false);
 
   /*
   // Simulate API response with fake data
@@ -144,11 +145,19 @@ const Recording = () => {
       }
     }
     console_log_lastname();
+    return () => {
+      console.log("Cleaning up fetch...");
+    };
   }, []);
 
-
+  let fetched = false;
   useEffect(() => {
     const fetchTodaysMessages = async () => {
+      if (isTodaysMessagesFetched.current) {
+        return;
+      }
+      isTodaysMessagesFetched.current = true
+      console.log('i fire once');
       console.log(`Trying to get today's messages for user: ${user.username}`);
       try {
         const response = await getTodaysMessagesAPI(user.username); // Replace with your API function
@@ -159,9 +168,6 @@ const Recording = () => {
             setChatMessages((prev) => [
               ...prev,
               { sender: "user", text: message.user_message },
-            ]);
-            setChatMessages((prev) => [
-              ...prev,
               { sender: "bot", text: message.assistant_response },
             ]);
           });
@@ -172,7 +178,7 @@ const Recording = () => {
         console.error("Error fetching today's messages:", error);
       }
     }
-      fetchTodaysMessages();
+    fetchTodaysMessages();
   }, []);
 
   return (

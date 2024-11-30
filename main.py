@@ -9,6 +9,7 @@ from openai import OpenAI
 from transformers import pipeline, RobertaTokenizerFast, TFRobertaForSequenceClassification
 from datetime import datetime, timezone, timedelta
 from pytz import timezone
+from collections import Counter
 
 
 
@@ -70,11 +71,9 @@ def get_user():
     try:
         user = db.users.find_one({"username": data['username'], "password": data['password']})
         if user:
+            session.clear()
             session['username'] = user['username']
-            session['user_messages'] = get_todays_user_messages()
-            print(f"CURRENT SESSION VARS in get_user: {session}\n\n\n\n")
-
-            print(f"Session's username is {session['username']}")
+            print(f"\n\n\n{session}\n\n\n")
             return jsonify({
                 "firstname": user['firstname'],
                 "username": user['username']
@@ -106,6 +105,10 @@ def create_user():
         print(result)
         # Return the created user data with the new user ID
         new_user = db.users.find_one({'_id': result.inserted_id})
+        
+        session.clear()
+        session['username'] = data['username']
+
         print(new_user)
         return jsonify({
             "firstname": new_user['firstname'],
@@ -116,6 +119,12 @@ def create_user():
     except Exception as e:
         print('failed:', str(e))
         return jsonify({"error": str(e)}), 500
+    
+@app.route('/api/logout_endpoint', methods=['POST'])
+def logout():
+    session.clear()
+    return jsonify({"message": "Logged out successfully"}), 200
+
 # ------------------------------------------------------------------------------------
 
 
@@ -137,48 +146,45 @@ def get_user_lastname():
 # Fetches logs from database for a specific user
 @app.route('/api/events_endpoint', methods=['GET'])
 def get_user_logs_endpoint():
-    username = request.args.get('username')
-    
-    try:
-        logs = list(db.logs.find({"username": username}))  # Convert cursor to list
-        if not logs:
-            return jsonify([]), 200
-
-        formatted_logs = [
-                {
-                    "id": str(log["_id"]),
-                    "title": f"Date: {strip_time_from_timestamp(log['timestamp'])}. Emotion: {log['emotion']}",
-                    "date": strip_time_from_timestamp(log['timestamp']),
-
-                }
-                for log in logs
-            ]
-        return jsonify(formatted_logs), 200
-
-    except Exception as e:
-        return jsonify({"message": "Unexpected error duting fetching of calendar logs"}), 500
+    if 'user_logs' not in session:
+        session['user_logs'] = get_user_logs()
+    return jsonify(session.get('user_logs'))
 
 def get_user_logs():
     username = session.get('username')
     
-    try:
-        logs = list(db.logs.find({"username": username}))  # Convert cursor to list
-        if not logs:
-            return jsonify([]), 200
+    logs = list(db.logs.find({"username": username}))  # Convert cursor to list
+    if not logs:
+        return []
 
-        formatted_logs = [
-                {
-                    "id": str(log["_id"]),
-                    "title": f"Date: {strip_time_from_timestamp(log['timestamp'])}. Emotion: {log['emotion']}",
-                    "date": strip_time_from_timestamp(log['timestamp']),
+    # Group emotions by date
+    emotions_by_date = {}
+    for log in logs:
+        log_date = strip_time_from_timestamp(log['timestamp'])
+        emotion = log['emotion']
+        if log_date not in emotions_by_date:
+            emotions_by_date[log_date] = []
+        emotions_by_date[log_date].append(emotion)
 
-                }
-                for log in logs
-            ]
-        return formatted_logs
+    # Find the most common emotion for each day
+    most_common_emotions = []
+    for log_date, emotions in emotions_by_date.items():
+        most_common_emotion = Counter(emotions).most_common(1)[0][0]  # Get the emotion with the highest count
+        most_common_emotions.append({
+            "date": log_date,
+            "emotion": most_common_emotion
+        })
 
-    except Exception as e:
-        return "Unexpected error duting fetching of calendar logs"
+    # Format the logs for calendar events
+    formatted_logs = [
+        {
+            "id": str(index),
+            "title": f"{log['emotion']}",
+            "date": log['date'],
+        }
+        for index, log in enumerate(most_common_emotions)
+    ]
+    return formatted_logs
     
 def strip_time_from_timestamp(date_value):
     return date_value.date().isoformat()
@@ -258,7 +264,7 @@ def handle_audio_message():
 
     assistant_response = generate_chatgpt_response(transcription, detected_emotion)
     
-    insert_emotion_verdict(username, detected_emotion, transcription, "audio", assistant_response)
+    insert_emotion(username, detected_emotion, transcription, "audio", assistant_response)
 
     user_message = transcription
     
@@ -269,7 +275,7 @@ def handle_audio_message():
 
 # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 # Both handle_audio_message and handle_text_message uses functions in this X block
-def insert_emotion_verdict(username, emotion_verdict, user_message, type, assistant_response):
+def insert_emotion(username, emotion_verdict, user_message, type, assistant_response):
     timestamp = datetime.now()
     db.logs.insert_one({
         "username": username,
@@ -326,6 +332,7 @@ def create_json_response(message, detected_emotion, user_message, assistant_resp
     }), 200
     
 def update_session(user_message, assistant_response):
+    print(f"CALLED UPDATE SESSION \n\n\n{session}\n\n\n")
     user_messages = session.get('user_messages', [])
     new_message = {
         'user_message': user_message,
@@ -360,7 +367,7 @@ def handle_text_message():
 
     assistant_response = generate_chatgpt_response(user_message, detected_emotion)
     
-    insert_emotion_verdict(username, detected_emotion, user_message, "text", assistant_response)
+    insert_emotion(username, detected_emotion, user_message, "text", assistant_response)
 
     update_session(user_message, assistant_response)
     
@@ -503,14 +510,12 @@ def get_total_messages():
 # For lasting messages
 @app.route('/api/get_todays_user_messages_endpoint', methods=['GET'])
 def get_todays_user_messages_endpoint():
+    if 'user_messages' not in session:
+        session['user_messages'] = get_todays_user_messages()
     return jsonify(session.get('user_messages'))
 
 
 def get_todays_user_messages():
-    """
-    Fetch user messages from the database.
-    Returns the list of messages.
-    """
     username = session.get('username')
     
     query = { "username": username }
