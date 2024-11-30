@@ -79,3 +79,5 @@ pip install transformers torch datasets
 pip install torch torchvision torchaudio
 
 
+For eastern timezone
+pip install pytz

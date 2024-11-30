@@ -5,7 +5,7 @@ axios.defaults.withCredentials = true;
 
 export const logInAPI = async (userData) => {
   try {
-    const response = await axios.post(`${API_URL}login`, userData);
+    const response = await axios.post(`${API_URL}login`, userData, { withCredentials: true });
     return response.data;
   } catch (error) {
     console.error("Error at logInAPI", error);
@@ -45,10 +45,10 @@ export const getLastnameAPI = async (username) => {
   }
 };
 
-export const getEventsAPI = async (username) => {
+export const getEventsAPI = async () => {
   try {
-    const response = await axios.get(`${API_URL}events`, {
-      params: { username }
+    const response = await axios.get(`${API_URL}events_endpoint`, {
+      withCredentials: true
     });
     return response.data;
   } catch (error) {
@@ -103,9 +103,7 @@ export const getEmotionCountsForPieChartAPI = async (username) => {
 
 export const getMessageCountsForLineChartAPI = async (username) => {
   try {
-    const response = await axios.get(`${API_URL}get_messages_counts_for_line_chart`, {
-      params: { username }  // Send username as a query parameter
-    });
+    const response = await axios.get(`${API_URL}get_messages_counts_for_line_chart`);
     return response.data;
   } catch (error) {
     console.error("Error at getMessagesCountsForLineChartAPI", error);
@@ -117,6 +115,18 @@ export const getTotalMessagesOfUserAPI = async (username) => {
   try {
     const response = await axios.get(`${API_URL}get_total_messages`, {
       params: { username }  // Send username as a query parameter
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error at getTotalMessagesOfUserAPI", error);
+    throw error;
+  }
+};
+
+export const getTodaysMessagesAPI = async () => {
+  try {
+    const response = await axios.get(`${API_URL}get_todays_user_messages_endpoint`, {
+      withCredentials: true
     });
     return response.data;
   } catch (error) {

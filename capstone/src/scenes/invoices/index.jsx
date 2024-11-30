@@ -13,7 +13,7 @@ import MicIcon from '@mui/icons-material/Mic';
 import StopIcon from '@mui/icons-material/Stop';
 import PlayArrowOutlinedIcon from '@mui/icons-material/PlayArrowOutlined';
 
-import { getLastnameAPI, uploadAudioAPI, sendMessageAPI } from '../../api';
+import { getLastnameAPI, uploadAudioAPI, sendMessageAPI, getTodaysMessagesAPI } from '../../api';
 import { useUser } from '../../UserContext';
 import { useEffect } from "react";
 import axios from 'axios';
@@ -72,7 +72,7 @@ const Recording = () => {
     setTimeout(() => {
       setChatMessages((prev) => [
         ...prev,
-        { sender: "bot", text: response.response }, // Use actual API response here
+        { sender: "bot", text: response.assistant_response }, // Use actual API response here
       ]);
     }, 1000);
 
@@ -110,7 +110,7 @@ const Recording = () => {
           ]);
           setChatMessages((prev) => [
             ...prev,
-            { sender: "bot", text: response.response }, // Use actual API response here
+            { sender: "bot", text: response.assistant_response }, // Use actual API response here
           ]);
         };
   
@@ -144,6 +144,35 @@ const Recording = () => {
       }
     }
     console_log_lastname();
+  }, []);
+
+
+  useEffect(() => {
+    const fetchTodaysMessages = async () => {
+      console.log(`Trying to get today's messages for user: ${user.username}`);
+      try {
+        const response = await getTodaysMessagesAPI(user.username); // Replace with your API function
+        if (response.length > 0) {
+          console.log(`Retrieved ${response.length} messages for today.`);
+          // Iterate through the response and update chat messages
+          response.forEach((message) => {
+            setChatMessages((prev) => [
+              ...prev,
+              { sender: "user", text: message.user_message },
+            ]);
+            setChatMessages((prev) => [
+              ...prev,
+              { sender: "bot", text: message.assistant_response },
+            ]);
+          });
+        } else {
+          console.log("No messages found for today.");
+        }
+      } catch (error) {
+        console.error("Error fetching today's messages:", error);
+      }
+    }
+      fetchTodaysMessages();
   }, []);
 
   return (

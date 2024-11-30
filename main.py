@@ -7,7 +7,9 @@ from pydub import AudioSegment
 import uuid
 from openai import OpenAI
 from transformers import pipeline, RobertaTokenizerFast, TFRobertaForSequenceClassification
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
+from pytz import timezone
+
 
 
 # Flask initialization
@@ -21,7 +23,6 @@ messages_collection = db['logs']  # Ensure this is the correct collection name
 
 # ------------------------------------------------------------------------------------
 # CORS is hella annoying. Better not touch these safeguards
-app.config['SESSION_COOKIE_HTTPONLY'] = False
 app.secret_key = 'BAD_SEKRET_KEY'
 CORS(app, 
      resources={r"/*": {
@@ -30,8 +31,9 @@ CORS(app,
          "allow_headers": ["Origin", "X-Requested-With", "Content-Type", "Accept"],
          "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
      }})
+app.config['SESSION_COOKIE_HTTPONLY'] = False
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
-app.config['SESSION_COOKIE_SECURE'] = False
+app.config['SESSION_COOKIE_SECURE'] = True
 # ------------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------------
@@ -63,11 +65,15 @@ def sign_up():
 @app.route('/api/login', methods=['POST'])
 def get_user():
     data = request.json
+    print()
     print("Received login data:", data)
     try:
         user = db.users.find_one({"username": data['username'], "password": data['password']})
         if user:
             session['username'] = user['username']
+            session['user_messages'] = get_todays_user_messages()
+            print(f"CURRENT SESSION VARS in get_user: {session}\n\n\n\n")
+
             print(f"Session's username is {session['username']}")
             return jsonify({
                 "firstname": user['firstname'],
@@ -129,8 +135,8 @@ def get_user_lastname():
 
 # ------------------------------------------------------------------------------------
 # Fetches logs from database for a specific user
-@app.route('/api/events', methods=['GET'])
-def get_user_logs():
+@app.route('/api/events_endpoint', methods=['GET'])
+def get_user_logs_endpoint():
     username = request.args.get('username')
     
     try:
@@ -151,6 +157,28 @@ def get_user_logs():
 
     except Exception as e:
         return jsonify({"message": "Unexpected error duting fetching of calendar logs"}), 500
+
+def get_user_logs():
+    username = session.get('username')
+    
+    try:
+        logs = list(db.logs.find({"username": username}))  # Convert cursor to list
+        if not logs:
+            return jsonify([]), 200
+
+        formatted_logs = [
+                {
+                    "id": str(log["_id"]),
+                    "title": f"Date: {strip_time_from_timestamp(log['timestamp'])}. Emotion: {log['emotion']}",
+                    "date": strip_time_from_timestamp(log['timestamp']),
+
+                }
+                for log in logs
+            ]
+        return formatted_logs
+
+    except Exception as e:
+        return "Unexpected error duting fetching of calendar logs"
     
 def strip_time_from_timestamp(date_value):
     return date_value.date().isoformat()
@@ -228,16 +256,20 @@ def handle_audio_message():
         'angry', 'calm', 'disgust', 'fearful', 'happy', 'neutral', 'sad', 'surprised'
     '''
 
-    insert_emotion_verdict(username, detected_emotion, transcription, "audio")
+    assistant_response = generate_chatgpt_response(transcription, detected_emotion)
+    
+    insert_emotion_verdict(username, detected_emotion, transcription, "audio", assistant_response)
 
-    server_response = generate_chatgpt_response(transcription, detected_emotion)
     user_message = transcription
-    return create_json_response("The audio message has been processed", detected_emotion, user_message, server_response)
+    
+    update_session(user_message, assistant_response)
+
+    return create_json_response("The audio message has been processed", detected_emotion, user_message, assistant_response)
 # ------------------------------------------------------------------------------------
 
 # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 # Both handle_audio_message and handle_text_message uses functions in this X block
-def insert_emotion_verdict(username, emotion_verdict, user_message, type):
+def insert_emotion_verdict(username, emotion_verdict, user_message, type, assistant_response):
     timestamp = datetime.now()
     db.logs.insert_one({
         "username": username,
@@ -245,41 +277,63 @@ def insert_emotion_verdict(username, emotion_verdict, user_message, type):
         "user_message": user_message,
         "timestamp": timestamp,
         "type": type, # audio or text
+        "assistant_response": assistant_response,
     })
     print(f"Log inserted. User: {username} with emotion: {emotion_verdict} this day: {timestamp}")
 
-def generate_chatgpt_response(user_message, detected_emotion):
+def generate_chatgpt_response(new_user_message, detected_emotion):
+    how_far_to_remember = 5 # ChatGPT will remember last N messages
     
+    user_messages = session.get('user_messages', [])
+    last_N_messages = user_messages[-how_far_to_remember:]
+    
+    messages = [
+            {"role": "system", "content": f"""You are an emotional support assistant designed to monitor and support the user's emotional well-being.
+    The user is currently feeling {detected_emotion}. Your goal is to provide empathetic, supportive, and relevant responses that help the user navigate their emotions.
+    Ensure that all responses are centered around emotional health, mental well-being, and related topics.
+    Do **NOT** engage in conversations unrelated to emotional support or health monitoring. 
+    All conversations are logged and monitored for emotional analysis, so please stay on-topic and avoid straying into irrelevant or non-pertinent subjects. 
+    If the user begins to discuss topics that don't pertain to their emotions or well-being, gently guide them back to the conversation about their feelings or emotional state."""}
+    ]
+    
+    for message in last_N_messages:
+            # User message
+            messages.append({"role": "user", "content": message['user_message']})
+            # Assistant response
+            messages.append({"role": "assistant", "content": message['assistant_response']})
+    
+    # Add the newesest user message
+    messages.append({"role": "user", "content": new_user_message})
+    
+    print(messages)
     try:
-        chat_completion = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-                {"role": "system", "content": f"""You are a emotional support. We detected that the user is feeling {detected_emotion}.
-                                                Please respond shortly to continue the conversation going
-                                                so that it would lead us to know user's emotional state"""},
-                {
-                    "role": "user",
-                    "content": user_message
-                }
-            ]
-        )
+        chat_completion = client.chat.completions.create(model="gpt-4o-mini", messages=messages)
         chatgpt_response = chat_completion.choices[0].message.content
         print(f"ChatGPT respose is: {chatgpt_response}")
 
         return chatgpt_response
     
     except Exception as e:
-        # Handle any other unexpected errors
         print("ChatGPT UNEXPECTED ERROR")
         return "An unexpected error occurred. Please try again"
     
-def create_json_response(message, detected_emotion, user_message, server_response):
+def create_json_response(message, detected_emotion, user_message, assistant_response):
     return jsonify({
         "message": message,
         "detected_emotion": detected_emotion,
         "user_message": user_message,
-        "response": server_response
+        "assistant_response": assistant_response
     }), 200
+    
+def update_session(user_message, assistant_response):
+    user_messages = session.get('user_messages', [])
+    new_message = {
+        'user_message': user_message,
+        'assistant_response': assistant_response
+    }
+    user_messages.append(new_message)
+    session['user_messages'] = user_messages
+    session.modified = True # Save session
 # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 # ------------------------------------------------------------------------------------
@@ -303,11 +357,14 @@ def handle_text_message():
         pride,realization, relief, remorse, sadness, surprise + neutral
     '''
     
-    insert_emotion_verdict(username, detected_emotion, user_message, "text")
 
-    server_response = generate_chatgpt_response(user_message, detected_emotion)
+    assistant_response = generate_chatgpt_response(user_message, detected_emotion)
+    
+    insert_emotion_verdict(username, detected_emotion, user_message, "text", assistant_response)
 
-    return create_json_response("The text message has been processed", detected_emotion, user_message, server_response)
+    update_session(user_message, assistant_response)
+    
+    return create_json_response("The text message has been processed", detected_emotion, user_message, assistant_response)
 # ------------------------------------------------------------------------------------
 
 
@@ -365,7 +422,10 @@ def get_color_for_emotion(emotion):
 # Line Chart
 @app.route('/api/get_messages_counts_for_line_chart', methods=['GET'])
 def get_messages_counts_for_line_chart():
-    username = request.args.get('username')
+    # username = request.args.get('username')
+    
+    # TO DO: CHANGE EVERY INFO REQUEST TO SESSION GET
+    username = session.get('username')
 
     pipeline = [
         {"$match": {"username": username}},
@@ -435,27 +495,51 @@ def get_total_messages():
     total_messages = messages_collection.count_documents({"username": username})
 
     print(f"Total messages for user {username} is {total_messages}")
-    
-    # TEMP
-    get_n_recent_user_messages("Sagiri", 6)
 
     return jsonify({"totalMessages": total_messages}), 200
 # ------------------------------------------------------------------------------------
 
+# ------------------------------------------------------------------------------------
+# For lasting messages
+@app.route('/api/get_todays_user_messages_endpoint', methods=['GET'])
+def get_todays_user_messages_endpoint():
+    return jsonify(session.get('user_messages'))
 
-def get_n_recent_user_messages(this_username, n_of_messages):
-    latest_records = messages_collection.find(
-        { "username": this_username },  # Filter for the specific username
-        { "user_message": 1 }  # Projection: only include user_message, exclude _id
-    ).sort("timestamp.date", -1).limit(n_of_messages)
 
-    # Convert to a list
-    latest_records_list = list(latest_records)
+def get_todays_user_messages():
+    """
+    Fetch user messages from the database.
+    Returns the list of messages.
+    """
+    username = session.get('username')
+    
+    query = { "username": username }
+    
+    tz = timezone('EST')
+    
+    now = datetime.now(tz) 
+    start_of_day = datetime(now.year, now.month, now.day)
+    end_of_day = start_of_day + timedelta(days=1)
+    query["timestamp"] = {
+        "$gte": start_of_day,
+        "$lt": end_of_day
+    }
 
-    # Print the results
-    print(latest_records_list)
-    return
+    projection = {
+        "_id": 0,  # Don't display _id
+        "user_message": 1,
+        "assistant_response": 1
+    }
+
+    cursor = messages_collection.find(query, projection).sort("timestamp", -1)
+
+    user_messages = list(cursor)
+    user_messages.reverse()
+
+    return user_messages
+# ------------------------------------------------------------------------------------
 
 if __name__ == '__main__':
+    
     app.run(port=5000, debug=True)
 
