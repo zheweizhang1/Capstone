@@ -553,11 +553,13 @@ def get_todays_messages():
 
 # Getting user messages within a specific time range
 def get_user_messages_in_time_range(start_date, end_date, fields=None):
+    print("Inside get_user_messages_in_time_range function")
     """
         fields (list): Needs to be specified to get database field that is needed like fields=["user_message", "assistant_response"]
     """
     username = session.get('username')
     if not username:
+        print("NOT USERNAME in get_user_messages_in_time_range")
         return []
 
     print("Building a query")
@@ -584,9 +586,8 @@ def get_user_messages_in_time_range(start_date, end_date, fields=None):
 # For analytics like most common emotion last 30 days, 7 days, today 
 @app.route('/api/get_analytics', methods=['GET'])
 def get_user_analytics():
-    scope = request.args.get('days', 1)  # Default is 1 day
-    print("The SCOPE IS ", scope)
-    scope = int(scope)
+    print("Inside get_user_analytics function")
+    scope = int(request.args.get('days', 1))  # Default is 1 day
     print("The SCOPE IS ", scope)
 
     tz = timezone('EST')
@@ -610,8 +611,10 @@ def get_user_analytics():
 
     print(f"For scope {scope} the most common emotion is {most_common_emotion}")
     return jsonify({
-        "most_common_emotion": most_common_emotion,
-    })
+        "scope": scope,
+        "most_common_emotion": most_common_emotion.title(),
+    }), 200
+
 
 def get_most_common_emotion(messages):
     emotions = [message.get('emotion') for message in messages if 'emotion' in message]

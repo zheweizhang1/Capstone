@@ -13,10 +13,12 @@ import BarChart from "../../components/BarChart";
 import StatBox from "../../components/StatBox";
 import ProgressCircle from "../../components/ProgressCircle";
 
-import { getTotalMessagesOfUserAPI } from "../../api";
+import { getTotalMessagesOfUserAPI, getAnalyticsAPI } from "../../api";
 import { useUser } from "../../UserContext";
 import { useState, useEffect } from "react";
 import PieChart from "../../components/PieChart";
+
+import { useRef } from "react";
 
 /* 
   TO DO
@@ -33,6 +35,13 @@ const Dashboard = () => {
   const [emotionLast1Day, setEmotionLast1Day] = useState(0);
   const [emotionLast7Day, setEmotionLast7Day] = useState(0);
   const [emotionLast30Day, setEmotionLast30Day] = useState(0);
+
+  const isAnalyticsFetched = useRef({
+    last1Day: false,
+    last7Day: false,
+    last30Day: false,
+  });
+
 
   const { user } = useUser();
   useEffect(() => {
@@ -56,27 +65,27 @@ const Dashboard = () => {
   }, [user.username]);
 
   useEffect(() => {
-    const fetchAnalytics = async (days, setEmotionState) => {
-      console.log(`Trying to get user's {${user.username}} analytics for the last ${days} days`);
+    const fetchAnalytics = async (days, setEmotionState, flagKey) => {
+      if (isAnalyticsFetched.current[flagKey]) {
+        return;
+      }
+    
+      isAnalyticsFetched.current[flagKey] = true;  // Mark as fetched
+      console.log(`Trying to get user's analytics for the last ${days} days`);
+    
       try {
-        const response = await fetch(`http://127.0.0.1:5000/api/get_analytics?days=${days}`);
-        const data = await response.json();
-  
-        if (response.ok) {
-          console.log(`Fetched analytics for ${days} days: `, response);
-          setEmotionState(data.most_common_emotion);
-        } else {
-          console.error("Failed to fetch analytics:", data);
-        }
+        const data = await getAnalyticsAPI(days);  // Fetch data using the API function
+        console.log(`Fetched analytics for ${days} days: `, data);
+        setEmotionState(data.most_common_emotion);  // Update state with the fetched emotion
       } catch (error) {
         console.error("Error fetching analytics:", error);
       }
-    };
+    }
   
-    fetchAnalytics(1, setEmotionLast1Day);
-    fetchAnalytics(7, setEmotionLast7Day);
-    fetchAnalytics(30, setEmotionLast30Day);
-  });
+    fetchAnalytics(1, setEmotionLast1Day, 'last1Day');
+    fetchAnalytics(7, setEmotionLast7Day, 'last7Day');
+    fetchAnalytics(30, setEmotionLast30Day, 'last30Day');
+  }, []);
 
   return (
     <Box m="20px">
@@ -104,12 +113,12 @@ const Dashboard = () => {
       <Box
         display="grid"
         gridTemplateColumns="repeat(12, 1fr)"
-        gridAutoRows="140px"
+        gridAutoRows="200px"
         gap="20px"
       >
         {/* ROW 1 */}
         <Box
-          gridColumn="span 3"
+          gridColumn="span 4"
           backgroundColor={colors.primary[400]}
           display="flex"
           alignItems="center"
@@ -118,7 +127,7 @@ const Dashboard = () => {
           {/* TODO: Display some useful information */}
           <StatBox
             title={emotionLast1Day}
-            subtitle="BOX 1.2"
+            subtitle="Your most common emotion today"
             progress="0.75"
             increase="+14%"
             icon={
@@ -129,7 +138,7 @@ const Dashboard = () => {
           />
         </Box>
         <Box
-          gridColumn="span 3"
+          gridColumn="span 4"
           backgroundColor={colors.primary[400]}
           display="flex"
           alignItems="center"
@@ -137,8 +146,8 @@ const Dashboard = () => {
         >
           {/* TODO: Display some useful information */}
           <StatBox
-            title="BOX 2.1"
-            subtitle="BOX 2.2"
+            title={emotionLast7Day}
+            subtitle="Your most common emotion last 7 days"
             progress="0.50"
             increase="+21%"
             icon={
@@ -149,7 +158,7 @@ const Dashboard = () => {
           />
         </Box>
         <Box
-          gridColumn="span 3"
+          gridColumn="span 4"
           backgroundColor={colors.primary[400]}
           display="flex"
           alignItems="center"
@@ -157,8 +166,8 @@ const Dashboard = () => {
         >
           {/* TODO: Display some useful information */}
           <StatBox
-            title="BOX 3.1"
-            subtitle="BOX 3.2"
+            title={emotionLast30Day}
+            subtitle="Your most common emotion last 30 days"
             progress="0.30"
             increase="+5%"
             icon={
@@ -168,6 +177,7 @@ const Dashboard = () => {
             }
           />
         </Box>
+        {/*
         <Box
           gridColumn="span 3"
           backgroundColor={colors.primary[400]}
@@ -175,7 +185,6 @@ const Dashboard = () => {
           alignItems="center"
           justifyContent="center"
         >
-          {/* TODO: Display some useful information */}
           <StatBox
             title="BOX 4.1"
             subtitle="BOX 4.2"
@@ -188,7 +197,7 @@ const Dashboard = () => {
             }
           />
         </Box>
-
+        */}
         {/* ROW 2 */}
         <Box
           gridColumn="span 8"

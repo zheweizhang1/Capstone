@@ -146,3 +146,17 @@ export const logoutAPI = async () => {
     throw error;
   }
 };
+
+export const getAnalyticsAPI = async (days) => {
+  try {
+    const response = await axios.get(`${API_URL}get_analytics`, {
+      params: { days },
+      withCredentials: true
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error("Error at getAnalyticsAPI", error);
+    throw error;
+  }
+};
