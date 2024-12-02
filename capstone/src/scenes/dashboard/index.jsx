@@ -30,6 +30,10 @@ const Dashboard = () => {
   const colors = tokens(theme.palette.mode);
 
   const [totalMessages, setTotalMessages] = useState(0);
+  const [emotionLast1Day, setEmotionLast1Day] = useState(0);
+  const [emotionLast7Day, setEmotionLast7Day] = useState(0);
+  const [emotionLast30Day, setEmotionLast30Day] = useState(0);
+
   const { user } = useUser();
   useEffect(() => {
     const fetchTotalMessages = async () => {
@@ -39,17 +43,40 @@ const Dashboard = () => {
         const data = await response.json();
 
         if (response.ok) {
-          console.log("Fetched total message count:", data);
+          console.log("Fetched total message count: ", data);
           setTotalMessages(data.totalMessages); // Assuming you store this in state
         } else {
-          console.error("Failed to fetch total message count:", data);
+          console.error("Failed to fetch total message count: ", data);
         }
       } catch (error) {
-        console.error("Error fetching total message count:", error);
+        console.error("Error fetching total message count: ", error);
       }
     };
     fetchTotalMessages();
   }, [user.username]);
+
+  useEffect(() => {
+    const fetchAnalytics = async (days, setEmotionState) => {
+      console.log(`Trying to get user's {${user.username}} analytics for the last ${days} days`);
+      try {
+        const response = await fetch(`http://127.0.0.1:5000/api/get_analytics?days=${days}`);
+        const data = await response.json();
+  
+        if (response.ok) {
+          console.log(`Fetched analytics for ${days} days: `, response);
+          setEmotionState(data.most_common_emotion);
+        } else {
+          console.error("Failed to fetch analytics:", data);
+        }
+      } catch (error) {
+        console.error("Error fetching analytics:", error);
+      }
+    };
+  
+    fetchAnalytics(1, setEmotionLast1Day);
+    fetchAnalytics(7, setEmotionLast7Day);
+    fetchAnalytics(30, setEmotionLast30Day);
+  });
 
   return (
     <Box m="20px">
@@ -90,7 +117,7 @@ const Dashboard = () => {
         >
           {/* TODO: Display some useful information */}
           <StatBox
-            title="BOX 1.1"
+            title={emotionLast1Day}
             subtitle="BOX 1.2"
             progress="0.75"
             increase="+14%"

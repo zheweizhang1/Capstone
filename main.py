@@ -73,6 +73,7 @@ def get_user():
         if user:
             session.clear()
             session['username'] = user['username']
+
             print(f"\n\n\n{session}\n\n\n")
             return jsonify({
                 "firstname": user['firstname'],
@@ -108,7 +109,6 @@ def create_user():
         
         session.clear()
         session['username'] = data['username']
-
         print(new_user)
         return jsonify({
             "firstname": new_user['firstname'],
@@ -151,8 +151,6 @@ def get_user_logs_endpoint():
     return jsonify(session.get('user_logs'))
 
 def get_user_logs():
-    from collections import Counter
-
     username = session.get('username')
     logs = list(db.logs.find({"username": username}))  # Convert cursor to list
     if not logs:
@@ -271,7 +269,7 @@ def handle_audio_message():
 
     user_message = transcription
     
-    update_session(user_message, assistant_response)
+    update_session(user_message, assistant_response, detected_emotion)
 
     return create_json_response("The audio message has been processed", detected_emotion, user_message, assistant_response)
 # ------------------------------------------------------------------------------------
@@ -293,7 +291,7 @@ def insert_emotion(username, emotion_verdict, user_message, type, assistant_resp
 def generate_chatgpt_response(new_user_message, detected_emotion):
     how_far_to_remember = 5 # ChatGPT will remember last N messages
     
-    user_messages = session.get('user_messages', [])
+    user_messages = session.get('todays_messages')
     last_N_messages = user_messages[-how_far_to_remember:]
     
     messages = [
@@ -334,15 +332,14 @@ def create_json_response(message, detected_emotion, user_message, assistant_resp
         "assistant_response": assistant_response
     }), 200
     
-def update_session(user_message, assistant_response):
+def update_session(user_message, assistant_response, detected_emotion):
     print(f"CALLED UPDATE SESSION \n\n\n{session}\n\n\n")
-    user_messages = session.get('user_messages', [])
     new_message = {
         'user_message': user_message,
-        'assistant_response': assistant_response
+        'assistant_response': assistant_response,
+        'detected_emotion': detected_emotion,
     }
-    user_messages.append(new_message)
-    session['user_messages'] = user_messages
+    session['todays_messages'].append(new_message)
     session.modified = True # Save session
 # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
@@ -372,7 +369,7 @@ def handle_text_message():
     
     insert_emotion(username, detected_emotion, user_message, "text", assistant_response)
 
-    update_session(user_message, assistant_response)
+    update_session(user_message, assistant_response, detected_emotion)
     
     return create_json_response("The text message has been processed", detected_emotion, user_message, assistant_response)
 # ------------------------------------------------------------------------------------
@@ -449,22 +446,6 @@ emotion_colors = {
     "sadness": "hsl(230, 70%, 50%)",      # Dark blue
     "surprise": "hsl(344, 70%, 50%)",     # Red
 }
-
-
-'''
-def get_color_for_emotion(emotion):
-    """Assign a unique color to each emotion"""
-    emotion_colors = {
-        "neutral": "hsl(104, 70%, 50%)",
-        "scary": "hsl(162, 70%, 50%)",
-        "happy": "hsl(291, 70%, 50%)",
-        "sad": "hsl(229, 70%, 50%)",
-        "angry": "hsl(344, 70%, 50%)",
-        "surprised": "hsl(344, 70%, 50%)",
-        "Unknown": "hsl(0, 0%, 50%)",  # Default color for undefined emotions
-    }
-    return emotion_colors.get(emotion, "hsl(0, 0%, 50%)")  # Default color if no match
-'''
 # ------------------------------------------------------------------------------------
 
 
@@ -552,43 +533,95 @@ def get_total_messages():
 
 # ------------------------------------------------------------------------------------
 # For lasting messages
-@app.route('/api/get_todays_user_messages_endpoint', methods=['GET'])
-def get_todays_user_messages_endpoint():
-    if 'user_messages' not in session:
-        session['user_messages'] = get_todays_user_messages()
-    return jsonify(session.get('user_messages'))
-
-
-def get_todays_user_messages():
-    username = session.get('username')
-    
-    query = { "username": username }
+@app.route('/api/get_todays_messages', methods=['GET'])
+def get_todays_messages():
+    if 'todays_messages' in session:
+        return session['todays_messages']
     
     tz = timezone('EST')
-    
-    now = datetime.now(tz) 
+    now = datetime.now(tz)
     start_of_day = datetime(now.year, now.month, now.day)
-    end_of_day = start_of_day + timedelta(days=1)
-    query["timestamp"] = {
-        "$gte": start_of_day,
-        "$lt": end_of_day
+
+    todays_messages = get_user_messages_in_time_range(
+            start_of_day,
+            now,
+            fields=["user_message", "assistant_response"]
+        )
+    session['todays_messages'] = todays_messages
+    return jsonify(session.get('todays_messages'))
+
+
+# Getting user messages within a specific time range
+def get_user_messages_in_time_range(start_date, end_date, fields=None):
+    """
+        fields (list): Needs to be specified to get database field that is needed like fields=["user_message", "assistant_response"]
+    """
+    username = session.get('username')
+    if not username:
+        return []
+
+    print("Building a query")
+    query = {
+        "username": username,
+        "timestamp": {"$gte": start_date, "$lt": end_date}
     }
+    print(f"The query is {query}")
+    print("Building a projection")
 
-    projection = {
-        "_id": 0,  # Don't display _id
-        "user_message": 1,
-        "assistant_response": 1
-    }
-
-    cursor = messages_collection.find(query, projection).sort("timestamp", -1)
-
-    user_messages = list(cursor)
-    user_messages.reverse()
-
-    return user_messages
+    projection = {"_id": 0}  # Do not include _id. NOT NEEDED
+    if fields:
+        for field in fields:
+            projection[field] = 1
+    print(f"The projection is {projection}")
+    
+    cursor = messages_collection.find(query, projection).sort("timestamp", 1)
+    cursor_results = list(cursor)
+    print(f"The query and projection return {cursor_results}")
+    return cursor_results
 # ------------------------------------------------------------------------------------
 
-if __name__ == '__main__':
-    
-    app.run(port=5000, debug=True)
+# ------------------------------------------------------------------------------------
+# For analytics like most common emotion last 30 days, 7 days, today 
+@app.route('/api/get_analytics', methods=['GET'])
+def get_user_analytics():
+    scope = request.args.get('days', 1)  # Default is 1 day
+    print("The SCOPE IS ", scope)
+    scope = int(scope)
+    print("The SCOPE IS ", scope)
 
+    tz = timezone('EST')
+    now = datetime.now(tz)
+
+    if scope == 1:
+        start_date = datetime(now.year, now.month, now.day)
+    elif scope == 7:
+        start_date = now - timedelta(days=7)
+    elif scope == 30:
+        start_date = now - timedelta(days=30)
+    else:
+        return jsonify({"error": "Invalid scope"}), 400
+
+    print(f"Start date: {start_date} and end date: {now}")
+    messages = get_user_messages_in_time_range(start_date, now, fields=["emotion"])
+    print(f"Messages are: {messages}")
+
+    most_common_emotion = get_most_common_emotion(messages)
+    print(f"Most_common_emotion are: {messages}")
+
+    print(f"For scope {scope} the most common emotion is {most_common_emotion}")
+    return jsonify({
+        "most_common_emotion": most_common_emotion,
+    })
+
+def get_most_common_emotion(messages):
+    emotions = [message.get('emotion') for message in messages if 'emotion' in message]
+    print(f"All emotions {emotions}")
+    if emotions:
+        most_common = Counter(emotions).most_common(1)
+        return most_common[0][0] if most_common else None
+    return None
+# ------------------------------------------------------------------------------------
+
+    
+if __name__ == '__main__':
+    app.run(port=5000, debug=True)

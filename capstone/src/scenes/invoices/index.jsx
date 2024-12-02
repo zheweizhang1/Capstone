@@ -145,9 +145,6 @@ const Recording = () => {
       }
     }
     console_log_lastname();
-    return () => {
-      console.log("Cleaning up fetch...");
-    };
   }, []);
 
   let fetched = false;

@@ -125,12 +125,12 @@ export const getTotalMessagesOfUserAPI = async (username) => {
 
 export const getTodaysMessagesAPI = async () => {
   try {
-    const response = await axios.get(`${API_URL}get_todays_user_messages_endpoint`, {
+    const response = await axios.get(`${API_URL}get_todays_messages`, {
       withCredentials: true
     });
     return response.data;
   } catch (error) {
-    console.error("Error at getTotalMessagesOfUserAPI", error);
+    console.error("Error at getTodaysMessagesAPI", error);
     throw error;
   }
 };
