@@ -10,7 +10,7 @@ from transformers import pipeline, RobertaTokenizerFast, TFRobertaForSequenceCla
 from datetime import datetime, timezone, timedelta
 from pytz import timezone
 from collections import Counter
-
+from fooWrapper import Foo
 
 
 # Flask initialization
@@ -606,6 +606,10 @@ def get_most_common_emotion(messages):
     return None
 # ------------------------------------------------------------------------------------
 
+def c_function():
+    f = Foo()
+    f.bar()
     
 if __name__ == '__main__':
+    c_function()
     app.run(port=5000, debug=True)
