@@ -76,7 +76,12 @@ const Dashboard = () => {
       try {
         const data = await getAnalyticsAPI(days);  // Fetch data using the API function
         console.log(`Fetched analytics for ${days} days: `, data);
-        setEmotionState(data.most_common_emotion);  // Update state with the fetched emotion
+        if (data.most_common_emotion) {
+          setEmotionState(data.most_common_emotion);
+        }
+        else {
+          setEmotionState("We're yet to find out!");
+        }
       } catch (error) {
         console.error("Error fetching analytics:", error);
       }

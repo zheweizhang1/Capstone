@@ -6,10 +6,22 @@ import os
 from pydub import AudioSegment
 import uuid
 from openai import OpenAI
-from transformers import pipeline, RobertaTokenizerFast, TFRobertaForSequenceClassification
+from transformers import (
+    RobertaTokenizerFast, 
+    TFRobertaForSequenceClassification, 
+    AutoFeatureExtractor, 
+    TFWav2Vec2ForSequenceClassification
+)
 from datetime import datetime, timezone, timedelta
 from pytz import timezone
 from collections import Counter
+import torch
+import tensorflow as tf
+import torchaudio
+import torchaudio.transforms
+
+
+
 
 
 
@@ -45,16 +57,21 @@ with open("API_KEY", "r") as file:
 client = OpenAI(api_key=api_key)
 # ------------------------------------------------------------------------------------
 
-# This initializes audio emotion recognition pipeline
-emotion_recognition = pipeline("audio-classification", model="ehcalabres/wav2vec2-lg-xlsr-en-speech-emotion-recognition")
+base_path = os.path.dirname(os.path.abspath(__file__))  # Directory of the current script
+model_path = os.path.join(base_path, "models", "EmoRoBERTa")
+print("Model path:", model_path)
+print("Contents:", os.listdir(model_path))
+# Text
+text_emotion_tokenizer = RobertaTokenizerFast.from_pretrained(model_path)
+text_emotion_model = TFRobertaForSequenceClassification.from_pretrained(model_path)
 
-# This initializes text emotion recognition pipeline
-tokenizer = RobertaTokenizerFast.from_pretrained("arpanghoshal/EmoRoBERTa")
-model = TFRobertaForSequenceClassification.from_pretrained("arpanghoshal/EmoRoBERTa")
-emotion = pipeline('sentiment-analysis', 
-                    model='arpanghoshal/EmoRoBERTa')
+audio_emotion_model_path = r"C:\Users\Sagiri\Desktop\Capstone Project Directory\models\wav2vec2-lg-xlsr-en-speech-emotion-recognition"
 
+# Load the feature extractor and model
+audio_emotion_processor = AutoFeatureExtractor.from_pretrained(audio_emotion_model_path)
+audio_emotion_model = TFWav2Vec2ForSequenceClassification.from_pretrained(audio_emotion_model_path)
 
+print("Model and processor loaded successfully!")
 
 
 @app.route('/')
@@ -254,9 +271,28 @@ def handle_audio_message():
     if transcription_error_occured:
         return create_json_response("The audio message has been processed", transcription, "N/A", "N/A")
 
-    # Emotion recognition
-    emotion_list = emotion_recognition(audio_filename)
-    detected_emotion = max(emotion_list, key=lambda x: x['score'])['label']  # Get the top emotion
+    try:
+        waveform, sample_rate = torchaudio.load(audio_filename)
+
+        # Resample the audio to 16kHz if necessary
+        if sample_rate != 16000:
+            resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=16000)
+            waveform = resampler(waveform)
+    except Exception as e:
+        return create_json_response("Error processing audio waveform", "N/A", transcription, f"Error: {e}")
+
+    # Process the audio with the emotion model
+    try:
+        inputs = audio_emotion_processor(
+            waveform.numpy(), sampling_rate=16000, return_tensors="tf", padding=True
+        )
+        outputs = audio_emotion_model(**inputs)
+        predictions = outputs.logits
+        predicted_class = tf.argmax(predictions, axis=-1).numpy()[0]
+        label_map = audio_emotion_model.config.id2label
+        detected_emotion = label_map[predicted_class]
+    except Exception as e:
+        return create_json_response("Error detecting emotion", "N/A", transcription, f"Error: {e}")
 
     ''' 
     EMOTION TYPES IF DETERMINED BY AUDIO:
@@ -347,14 +383,27 @@ def update_session(user_message, assistant_response, detected_emotion):
 # Receives text message from a user and evaluates its emotion
 # Text message and emotion is sent to ChatGPT to generate a response to continue the conversation going
 # Returns ChatGPT response
-@app.route('/api/handle_text_message', methods=['POST']) 
+@app.route('/api/handle_text_message', methods=['POST'])
 def handle_text_message():
     # Get info from form
     username = request.form['username']
     user_message = request.form['message']
+    
+    # Tokenize and process the user message
+    inputs = text_emotion_tokenizer(user_message, return_tensors="tf", truncation=True, padding=True)
 
-    emotion_list = emotion(user_message)
-    detected_emotion = emotion_list[0]['label']
+    # Get predictions from the model
+    outputs = text_emotion_model(**inputs)
+
+    # Extract the predicted class from the logits
+    predictions = outputs.logits
+    predicted_class = tf.argmax(predictions, axis=-1).numpy()[0]
+
+    # Map the predicted class index to the corresponding emotion label
+    label_map = text_emotion_model.config.id2label  # Maps class indices to labels
+    detected_emotion = label_map[predicted_class]
+    
+    print(f"Detected emotion: {detected_emotion}")
 
     ''' 
     EMOTION TYPES IF DETERMINED BY TEXT:
@@ -363,7 +412,6 @@ def handle_text_message():
         excitement, fear, gratitude, grief, joy, love, nervousness, optimism,
         pride,realization, relief, remorse, sadness, surprise + neutral
     '''
-    
 
     assistant_response = generate_chatgpt_response(user_message, detected_emotion)
     
@@ -610,10 +658,16 @@ def get_user_analytics():
     print(f"Most_common_emotion are: {messages}")
 
     print(f"For scope {scope} the most common emotion is {most_common_emotion}")
-    return jsonify({
-        "scope": scope,
-        "most_common_emotion": most_common_emotion.title(),
-    }), 200
+    if most_common_emotion:
+        return jsonify({
+            "scope": scope,
+            "most_common_emotion": most_common_emotion.title()
+        }), 200
+    else:
+        return jsonify({
+            "scope": scope,
+            "most_common_emotion": None
+        }), 200
 
 
 def get_most_common_emotion(messages):

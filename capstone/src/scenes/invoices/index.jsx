@@ -111,7 +111,7 @@ const Recording = () => {
           ]);
           setChatMessages((prev) => [
             ...prev,
-            { sender: "bot", text: response.assistant_response }, // Use actual API response here
+            { sender: "bot", text: response.assistant_response },
           ]);
         };
   
