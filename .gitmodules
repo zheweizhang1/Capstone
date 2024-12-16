@@ -1,0 +1,6 @@
+[submodule "models/EmoRoBERTa"]
+	path = models/EmoRoBERTa
+	url = https://huggingface.co/arpanghoshal/EmoRoBERTa
+[submodule "models/wav2vec2-lg-xlsr-en-speech-emotion-recognition"]
+	path = models/wav2vec2-lg-xlsr-en-speech-emotion-recognition
+	url = https://huggingface.co/ehcalabres/wav2vec2-lg-xlsr-en-speech-emotion-recognition
