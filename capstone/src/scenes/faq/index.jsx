@@ -59,19 +59,6 @@ const FAQ = () => {
       <Accordion defaultExpanded>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Typography color={colors.greenAccent[500]} variant="h5">
-            Then, what's "Profile Form" for?
-          </Typography>
-        </AccordionSummary>
-        <AccordionDetails>
-          <Typography>
-            The "Profile Form" lets you see the personal information you entered when you signed up
-            for our service. Any necessary edits could be made there as well.
-          </Typography>
-        </AccordionDetails>
-      </Accordion>
-      <Accordion defaultExpanded>
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography color={colors.greenAccent[500]} variant="h5">
             Do you have infographics?
           </Typography>
         </AccordionSummary>

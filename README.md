@@ -81,3 +81,5 @@ pip install torch torchvision torchaudio
 
 For eastern timezone
 pip install pytz
+
+pip install soundfile
