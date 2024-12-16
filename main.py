@@ -15,14 +15,12 @@ from transformers import (
 from datetime import datetime, timezone, timedelta
 from pytz import timezone
 from collections import Counter
-from fooWrapper import Foo
 import tensorflow as tf
 import torchaudio
 import torchaudio.transforms
-
-
-
-
+from fooWrapper import Foo
+import sys
+from ctypes import *
 
 
 # Flask initialization
@@ -71,7 +69,6 @@ audio_emotion_processor = AutoFeatureExtractor.from_pretrained(audio_emotion_mod
 audio_emotion_model = TFWav2Vec2ForSequenceClassification.from_pretrained(audio_emotion_model_path)
 
 print("Model and processor loaded successfully!")
-
 
 @app.route('/')
 def sign_up():
@@ -666,5 +663,8 @@ def c_function():
     f.bar()
     
 if __name__ == '__main__':
-    c_function()
+    if os.name == 'nt':  # Windows
+        lib = cdll.LoadLibrary('./libfoo.dll')
+        lib.testDLL("\n\nThis is small piece of C++\n\n")
+
     app.run(port=5000, debug=True)

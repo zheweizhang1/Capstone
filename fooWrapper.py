@@ -1,7 +1,12 @@
+import os
 from ctypes import cdll
-lib = cdll.LoadLibrary('./libfoo.so')
 
-class Foo(object):
+if os.name == 'nt':  # Windows
+    lib = cdll.LoadLibrary('./libfoo.dll')
+elif os.name == 'posix':  # macOS or Linux
+    lib = cdll.LoadLibrary('./libfoo.so')
+
+class Foo:
     def __init__(self):
         self.obj = lib.Foo_new()
 
