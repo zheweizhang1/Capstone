@@ -1,85 +1,41 @@
 # Capstone
 
-For Node.js on windows https://nodejs.org/en/download/prebuilt-installer
+While in outer Capstone Project Directory, run for all the pip install libraries used in this project. They're outlined in requirements.txt
 
-Un-.gitignore "node_modules" folder. Otherwise, in terminal run
-
-## npm install
-
-In case of errors, run command below to get "node_modules" folder
-
-## npm install --legacy-peer-deps
-
-Optionally,
-
-## npm audit fix
-
-Then,
-
-## npm install react-scripts@latest
-
-## npm start
-
-## npm outdated
+# pip install -r requirements.txt
 
 
+After that, run:
 
-Server runs on port 5000 and website is on 3000. For them to be able to connect, run
+# npm install
 
-## npm install axios
-
-
-
-All pip installs
-
-## pip install Flask flask-pymongo Flask-Cors SpeechRecognition pydub
-
-## npm install axios
+No issues should occur.
 
 
-FFMPEG for macOS, if Homebrew:
+Afterwards, do:
+
+# cd capstone
+# npm install axios
+# npm install
+# npm install --legacy-peer-deps
+# npm audit fix
+# npm install react-scripts@latest
+# npm start
+
+
+In case FFmpeg is not installed, follow the installation. FFmpeg for macOS, if Homebrew is already installed:
 
 ## brew install ffmpeg
 
-FFMPEG for Windows. Place donwloaded bin files into C\:ffmpeg (create ffmpeg folder for that) 
+FFmpeg for Windows. Place donwloaded FFmpeg bin files into C\:ffmpeg
 Command line -> Type env -> Click on "Path" -> "Edit" -> "New" -> Paste "C\:ffmpeg" -> OK
 
-FFMPEG Donwload https://ffmpeg.org/download.html
+FFmpeg Donwload https://www.gyan.dev/ffmpeg/builds/ffmpeg-git-essentials.7z
 
 
-If errors about watchdog
-pip install --upgrade watchdog
+In case of errors about watchdog
+# pip install --upgrade watchdog
 
-Reinstall watchdog:
-pip uninstall watchdog
-pip install watchdog
-
-
-Make sure to create "recordings" folder inside /capstone folder
-
-ChatGPT
-pip install openai
-
-
-# NLP emotion in text
-pip install transformers pipeline
-pip install tf-keras
-
-# Requires the latest pip
-pip install --upgrade pip
-
-# Current stable release for CPU and GPU
-pip install tensorflow
-
-pip install huggingface_hub
-to authenticate huggingface-cli login
-
-pip install transformers torch datasets
-
-pip install torch torchvision torchaudio
-
-
-For eastern timezone
-pip install pytz
-
-pip install soundfile
+Or reinstall watchdog
+# pip uninstall watchdog
+# pip install watchdog

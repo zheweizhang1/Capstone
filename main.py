@@ -21,6 +21,8 @@ import torchaudio.transforms
 from fooWrapper import Foo
 import sys
 from ctypes import *
+from huggingface_hub import login
+
 
 
 # Flask initialization
@@ -31,6 +33,7 @@ app.config["MONGO_URI"] = "mongodb://localhost:27017/my_app"
 db = PyMongo(app).db
 messages_collection = db['logs']  # Ensure this is the correct collection name
 
+login(token="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")
 
 # ------------------------------------------------------------------------------------
 # CORS is hella annoying. Better not touch these safeguards
@@ -666,5 +669,4 @@ if __name__ == '__main__':
     if os.name == 'nt':  # Windows
         lib = cdll.LoadLibrary('./libfoo.dll')
         lib.testDLL("\n\nThis is small piece of C++\n\n")
-
     app.run(port=5000, debug=True)
