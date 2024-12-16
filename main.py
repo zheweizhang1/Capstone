@@ -15,7 +15,7 @@ from transformers import (
 from datetime import datetime, timezone, timedelta
 from pytz import timezone
 from collections import Counter
-import torch
+from fooWrapper import Foo
 import tensorflow as tf
 import torchaudio
 import torchaudio.transforms
@@ -51,7 +51,6 @@ app.config['SESSION_COOKIE_SECURE'] = True
 
 # ------------------------------------------------------------------------------------
 # This reads the string in API_KEY file for token. It's needed for ChatGPT to work
-# Don't send ChatGPT big or many messages because it's not free
 with open("API_KEY", "r") as file:
         api_key = file.read().strip()
 client = OpenAI(api_key=api_key)
@@ -338,11 +337,10 @@ def generate_chatgpt_response(new_user_message, detected_emotion):
     All conversations are logged and monitored for emotional analysis, so please stay on-topic and avoid straying into irrelevant or non-pertinent subjects. 
     If the user begins to discuss topics that don't pertain to their emotions or well-being, gently guide them back to the conversation about their feelings or emotional state."""}
     ]
-    
+
+    # IMPORTANT: Attaching previous messages to the prompt
     for message in last_N_messages:
-            # User message
             messages.append({"role": "user", "content": message['user_message']})
-            # Assistant response
             messages.append({"role": "assistant", "content": message['assistant_response']})
     
     # Add the newesest user message
@@ -369,7 +367,6 @@ def create_json_response(message, detected_emotion, user_message, assistant_resp
     }), 200
     
 def update_session(user_message, assistant_response, detected_emotion):
-    print(f"CALLED UPDATE SESSION \n\n\n{session}\n\n\n")
     new_message = {
         'user_message': user_message,
         'assistant_response': assistant_response,
@@ -601,32 +598,25 @@ def get_todays_messages():
 
 # Getting user messages within a specific time range
 def get_user_messages_in_time_range(start_date, end_date, fields=None):
-    print("Inside get_user_messages_in_time_range function")
     """
         fields (list): Needs to be specified to get database field that is needed like fields=["user_message", "assistant_response"]
     """
     username = session.get('username')
     if not username:
-        print("NOT USERNAME in get_user_messages_in_time_range")
         return []
 
-    print("Building a query")
     query = {
         "username": username,
         "timestamp": {"$gte": start_date, "$lt": end_date}
     }
-    print(f"The query is {query}")
-    print("Building a projection")
 
     projection = {"_id": 0}  # Do not include _id. NOT NEEDED
     if fields:
         for field in fields:
             projection[field] = 1
-    print(f"The projection is {projection}")
     
     cursor = messages_collection.find(query, projection).sort("timestamp", 1)
     cursor_results = list(cursor)
-    print(f"The query and projection return {cursor_results}")
     return cursor_results
 # ------------------------------------------------------------------------------------
 
@@ -634,28 +624,20 @@ def get_user_messages_in_time_range(start_date, end_date, fields=None):
 # For analytics like most common emotion last 30 days, 7 days, today 
 @app.route('/api/get_analytics', methods=['GET'])
 def get_user_analytics():
-    print("Inside get_user_analytics function")
     scope = int(request.args.get('days', 1))  # Default is 1 day
-    print("The SCOPE IS ", scope)
 
     tz = timezone('EST')
-    now = datetime.now(tz)
+    dateandtime = datetime.now(tz)
+    justdate = datetime(*dateandtime.timetuple()[:3])
 
-    if scope == 1:
-        start_date = datetime(now.year, now.month, now.day)
-    elif scope == 7:
-        start_date = now - timedelta(days=7)
-    elif scope == 30:
-        start_date = now - timedelta(days=30)
+    if isinstance(scope, int):
+        start_date = justdate - timedelta(days=scope - 1)
     else:
         return jsonify({"error": "Invalid scope"}), 400
 
-    print(f"Start date: {start_date} and end date: {now}")
-    messages = get_user_messages_in_time_range(start_date, now, fields=["emotion"])
-    print(f"Messages are: {messages}")
+    messages = get_user_messages_in_time_range(start_date, dateandtime, fields=["emotion"])
 
     most_common_emotion = get_most_common_emotion(messages)
-    print(f"Most_common_emotion are: {messages}")
 
     print(f"For scope {scope} the most common emotion is {most_common_emotion}")
     if most_common_emotion:
@@ -672,13 +654,17 @@ def get_user_analytics():
 
 def get_most_common_emotion(messages):
     emotions = [message.get('emotion') for message in messages if 'emotion' in message]
-    print(f"All emotions {emotions}")
     if emotions:
         most_common = Counter(emotions).most_common(1)
         return most_common[0][0] if most_common else None
     return None
 # ------------------------------------------------------------------------------------
 
+# Helped https://stackoverflow.com/questions/145270/calling-c-c-from-python
+def c_function():
+    f = Foo()
+    f.bar()
     
 if __name__ == '__main__':
+    c_function()
     app.run(port=5000, debug=True)
