@@ -39,7 +39,6 @@ app.config['SESSION_COOKIE_SECURE'] = True
 
 # ------------------------------------------------------------------------------------
 # This reads the string in API_KEY file for token. It's needed for ChatGPT to work
-# Don't send ChatGPT big or many messages because it's not free
 with open("API_KEY", "r") as file:
         api_key = file.read().strip()
 client = OpenAI(api_key=api_key)
@@ -606,6 +605,7 @@ def get_most_common_emotion(messages):
     return None
 # ------------------------------------------------------------------------------------
 
+# Helped https://stackoverflow.com/questions/145270/calling-c-c-from-python
 def c_function():
     f = Foo()
     f.bar()
