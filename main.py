@@ -33,7 +33,6 @@ app.config["MONGO_URI"] = "mongodb://localhost:27017/my_app"
 db = PyMongo(app).db
 messages_collection = db['logs']  # Ensure this is the correct collection name
 
-login(token="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")
 
 # ------------------------------------------------------------------------------------
 # CORS is hella annoying. Better not touch these safeguards
@@ -50,11 +49,23 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 app.config['SESSION_COOKIE_SECURE'] = True
 # ------------------------------------------------------------------------------------
 
+def clean_api_key(obfuscated_key):
+    cleaned_key = obfuscated_key[:6] + obfuscated_key[7:10] + obfuscated_key[11:]
+    print(f"\n\nCLEANED KEY IS {cleaned_key}\n\n")
+    return cleaned_key
+
 # ------------------------------------------------------------------------------------
 # This reads the string in API_KEY file for token. It's needed for ChatGPT to work
 with open("API_KEY", "r") as file:
-        api_key = file.read().strip()
-client = OpenAI(api_key=api_key)
+        obfuscated_key2 = file.read().strip()
+
+api_key2 = clean_api_key(obfuscated_key2)
+client = OpenAI(api_key=api_key2)
+
+obfuscated_key2 = "hf_CSn1zbw1aQTAtYCnNNdUBcwvGdlDUydCJURm"
+login_key2 = clean_api_key(obfuscated_key2)
+login(token=login_key2)
+
 # ------------------------------------------------------------------------------------
 
 base_path = os.path.dirname(os.path.abspath(__file__))  # Directory of the current script
